@@ -1,5 +1,6 @@
 import * as React from "react"
 import { cn } from "cn"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "./theme-toggle"
@@ -46,13 +47,16 @@ export function HeaderBrand({
       className={cn("flex items-center gap-3", className)}
       {...props}
     >
-      <div className="relative flex size-9 items-center justify-center overflow-hidden rounded-xl border border-primary/30 bg-primary/5 p-0.5 shadow-[0_0_15px_rgba(78,255,243,0.25)] transition-transform duration-200 hover:scale-105">
-        <img
+      <Avatar className="size-9 overflow-hidden rounded-xl border border-primary/30 bg-primary/5 p-0.5 shadow-[0_0_15px_rgba(78,255,243,0.25)] transition-transform duration-200 hover:scale-105 after:hidden">
+        <AvatarImage
           src="/logo-luna.png"
           alt="Killa CV Logo"
-          className="size-full object-contain"
+          className="size-full rounded-lg object-contain"
         />
-      </div>
+        <AvatarFallback className="rounded-lg bg-primary/10 font-heading text-xs font-bold text-primary">
+          KC
+        </AvatarFallback>
+      </Avatar>
       <div className="flex items-center gap-2.5">
         <h1 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           killa-cv
