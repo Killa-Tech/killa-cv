@@ -1,8 +1,8 @@
-import * as React from "react"
-import { cn } from "cn"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { cn } from "cn"
+import * as React from "react"
 import { ThemeToggle } from "./theme-toggle"
 
 export function Header({
