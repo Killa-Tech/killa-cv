@@ -1,12 +1,16 @@
 // =============================================================================
 // CV Engine — Single-File Bundled Distribution
-// Generated automatically by scripts/bundle.py on 2026-09-26 22:15:12
+// Generated automatically by scripts/bundle.py on 2026-09-28 14:49:02
 // Engine compatible with Typst v0.15+
 // =============================================================================
 
+// External Packages
+#import "@preview/based:0.2.0": base64
+
 // Core Utilities
 // --- Core: media.typ ---
-/// Renderiza una imagen de perfil / avatar desde una ruta absoluta o relativa en el sistema de archivos virtual.
+/// Renderiza una imagen de perfil / avatar ya sea desde una ruta local a disco
+/// o desde un Data URI en Base64 ("data:image/...;base64,...").
 /// Si foto_data es `none` o string vacío, retorna `none`.
 #let render_avatar(
   foto_data,
@@ -15,12 +19,17 @@
   stroke: 1pt + rgb("#dcdcdc")
 ) = {
   if foto_data != none and foto_data != "" {
-    let resolved-path = if type(foto_data) == str and not foto_data.starts-with("/") {
-      "/" + foto_data
+    let img = if type(foto_data) == str and foto_data.starts-with("data:image") {
+      let b64 = foto_data.replace(regex("^data:image/[^;]+;base64,"), "")
+      image(base64.decode(b64), width: width, height: width, fit: "cover")
     } else {
-      foto_data
+      let resolved-path = if type(foto_data) == str and not foto_data.starts-with("/") {
+        "/" + foto_data
+      } else {
+        foto_data
+      }
+      image(resolved-path, width: width, height: width, fit: "cover")
     }
-    let img = image(resolved-path, width: width, height: width, fit: "cover")
 
     box(
       width: width,
@@ -74,6 +83,56 @@
 /// 2. "a4" por defecto
 #let get_paper_format() = {
   sys.inputs.at("paper", default: "a4")
+}
+
+// --- Core: markdown.typ ---
+/// Módulo nativo universal de procesamiento Markdown para Typst (v0.15+)
+/// 100% offline y desacoplado, sin paquetes externos de Typst Universe.
+///
+/// Soporta de forma segura:
+/// - Enlaces: [texto](url) -> link("url")[texto]
+/// - Negrita: **texto** o __texto__
+/// - Cursiva: *texto* o _texto_
+/// - Negrita + Cursiva: ***texto*** o ___texto___
+/// - Código en línea: `código`
+/// - Párrafos múltiples con saltos de línea dobles
+/// - Escape automático de caracteres propios de Typst (#, $, @) para evitar
+///   colisiones de sintaxis con términos técnicos (C#, @usuario, $1000).
+
+#let render_md(input) = {
+  if input == none { return none }
+  if type(input) == content { return input }
+  let s = str(input)
+  if s == "" { return "" }
+
+  // 1. Escapar caracteres sintácticos de Typst (#, $, @)
+  let t = s.replace("#", "\\#").replace("$", "\\$").replace("@", "\\@")
+
+  // 2. Enlaces Markdown: [texto](url) -> #link("url")[texto]
+  t = t.replace(regex("\[(.*?)\]\((.*?)\)"), m => {
+    let target = m.captures.at(1).replace("\\#", "#")
+    "#link(\"" + target + "\")[" + m.captures.at(0) + "]"
+  })
+
+  // 3. Negrita + Cursiva: ***texto*** o ___texto___ -> #strong[#emph[texto]]
+  t = t.replace(regex("\*\*\*(.*?)\*\*\*"), m => "#strong[#emph[" + m.captures.at(0) + "]]")
+  t = t.replace(regex("___(.*?)___"), m => "#strong[#emph[" + m.captures.at(0) + "]]")
+
+  // 4. Negrita: **texto** o __texto__ -> #strong[texto]
+  t = t.replace(regex("\*\*(.*?)\*\*"), m => "#strong[" + m.captures.at(0) + "]")
+  t = t.replace(regex("__(.*?)__"), m => "#strong[" + m.captures.at(0) + "]")
+
+  // 5. Cursiva con asteriscos: *texto* -> #emph[texto]
+  t = t.replace(regex("(^|[^\*])\*([^\*\n]+?)\*([^\*]|$)"), m => m.captures.at(0) + "#emph[" + m.captures.at(1) + "]" + m.captures.at(2))
+
+  // 6. Cursiva con guiones bajos: _texto_ -> #emph[texto]
+  t = t.replace(regex("(^|[^\w])_([^\_\n]+?)_([^\w]|$)"), m => m.captures.at(0) + "#emph[" + m.captures.at(1) + "]" + m.captures.at(2))
+
+  // 7. Sanitizar asteriscos o guiones bajos huérfanos para evitar errores de delimitador
+  t = t.replace("*", "\\*")
+  t = t.replace(regex("(^|\s)_"), m => m.captures.at(0) + "\\_")
+
+  eval(t, mode: "markup")
 }
 
 // =============================================================================
@@ -143,7 +202,7 @@
         #grid(
           columns: (1fr, auto),
           align: (left + top, right + top),
-          text(weight: "bold", size: size-body, primary-left),
+          text(weight: "bold", size: size-body, render_md(primary-left)),
           text(weight: "medium", size: size-sub, primary-right)
         )
       ]
@@ -154,7 +213,7 @@
         #grid(
           columns: (1fr, auto),
           align: (left + top, right + top),
-          text(style: "italic", size: size-body, secondary-left),
+          text(style: "italic", size: size-body, render_md(secondary-left)),
           text(style: "italic", size: size-sub, fill: color-muted, secondary-right)
         )
       ]
@@ -162,14 +221,14 @@
       // Descripción en párrafo si existe
       #if description != none and description != "" [
         #v(1.5pt)
-        #text(size: size-body, fill: color-secondary, description)
+        #text(size: size-body, fill: color-secondary, render_md(description))
       ]
 
       // Viñetas o logros asociados
       #if items.len() > 0 [
         #v(1.5pt)
         #list(
-          ..items.map(it => text(size: size-body, fill: color-secondary, it)),
+          ..items.map(it => text(size: size-body, fill: color-secondary, render_md(it))),
           spacing: 3pt,
           tight: true
         )
@@ -194,7 +253,7 @@
         #let title = datos.at("titulo", default: datos.at("title", default: ""))
         #if title != "" [
           #v(2pt)
-          #text(size: size-title, style: "italic", fill: color-secondary, title)
+          #text(size: size-title, style: "italic", fill: color-secondary, render_md(title))
         ]
 
         #v(3pt)
@@ -256,12 +315,14 @@
   }
 
   // [renderers/text_renderer.typ]
-  /// Renderiza un bloque de texto o párrafo justificado con su título de sección
+  /// Renderiza un bloque de texto o párrafo justificado con su título de sección (con soporte Markdown)
   let render_text(title, content) = {
     if content != none and content != "" {
       section_title(title)
-      par(justify: true, leading: 0.65em)[
-        #text(size: size-body, fill: color-secondary, content)
+      block(spacing: space-item)[
+        #set par(justify: true, leading: 0.65em)
+        #set text(size: size-body, fill: color-secondary)
+        #render_md(content)
       ]
     }
   }
@@ -310,7 +371,7 @@
           #text(
             size: size-body,
             fill: color-secondary,
-            elements.join([ #h(3pt) • #h(3pt) ])
+            elements.map(render_md).join([ #h(3pt) • #h(3pt) ])
           )
         ]
       }
@@ -325,7 +386,7 @@
 
       block(width: 100%, spacing: space-item)[
         #list(
-          ..items.map(it => text(size: size-body, fill: color-secondary, it)),
+          ..items.map(it => text(size: size-body, fill: color-secondary, render_md(it))),
           spacing: 4pt,
           tight: true
         )
@@ -368,6 +429,8 @@
       leading: 0.6em,
     )
 
+    show link: set text(fill: color-link)
+
     // Renderizar encabezado automáticamente si hay datos personales
     if "datos_personales" in cv-data {
       cv_header(cv-data.datos_personales)
@@ -378,7 +441,7 @@
       let tipo = seccion.at("tipo", default: "texto")
       let titulo = seccion.at("titulo", default: "")
 
-      if tipo == "texto" [
+      if tipo == "texto" or tipo == "markdown" [
         #render_text(titulo, seccion.at("contenido", default: ""))
       ] else if tipo == "entradas" [
         #render_entries(titulo, seccion.at("items", default: ()))
@@ -462,7 +525,7 @@
         #grid(
           columns: (1fr, auto),
           align: (left + top, right + top),
-          text(weight: "bold", size: size-body, fill: color-primary, primary-left),
+          text(weight: "bold", size: size-body, fill: color-primary, render_md(primary-left)),
           text(weight: "medium", size: size-sub, fill: color-muted, primary-right)
         )
       ]
@@ -473,7 +536,7 @@
         #grid(
           columns: (1fr, auto),
           align: (left + top, right + top),
-          text(weight: "medium", size: size-body, fill: color-secondary, secondary-left),
+          text(weight: "medium", size: size-body, fill: color-secondary, render_md(secondary-left)),
           text(size: size-sub, fill: color-muted, secondary-right)
         )
       ]
@@ -481,14 +544,14 @@
       // Descripción en párrafo
       #if description != none and description != "" [
         #v(1.5pt)
-        #text(size: size-body, fill: color-secondary, description)
+        #text(size: size-body, fill: color-secondary, render_md(description))
       ]
 
       // Viñetas o logros asociados
       #if items.len() > 0 [
         #v(1.5pt)
         #list(
-          ..items.map(it => text(size: size-body, fill: color-secondary, it)),
+          ..items.map(it => text(size: size-body, fill: color-secondary, render_md(it))),
           spacing: 3pt,
           tight: true
         )
@@ -551,7 +614,7 @@
 
       #if title != "" [
         #v(1.5pt)
-        #text(size: size-title, weight: "medium", fill: color-accent, title)
+        #text(size: size-title, weight: "medium", fill: color-accent, render_md(title))
       ]
 
       #if total > 0 [
@@ -589,12 +652,14 @@
   }
 
   // [renderers/text_renderer.typ]
-  /// Renderiza un bloque de texto o párrafo justificado con su título de sección
+  /// Renderiza un bloque de texto o párrafo justificado con su título de sección (con soporte Markdown)
   let render_text(title, content) = {
     if content != none and content != "" {
       section_title(title)
-      par(justify: true, leading: 0.65em)[
-        #text(size: size-body, fill: color-secondary, content)
+      block(spacing: space-item)[
+        #set par(justify: true, leading: 0.65em)
+        #set text(size: size-body, fill: color-secondary)
+        #render_md(content)
       ]
     }
   }
@@ -642,7 +707,7 @@
           #text(
             size: size-body,
             fill: color-secondary,
-            elements.join([ #h(3pt) • #h(3pt) ])
+            elements.map(render_md).join([ #h(3pt) • #h(3pt) ])
           )
         ]
       }
@@ -657,7 +722,7 @@
 
       block(width: 100%, spacing: space-item)[
         #list(
-          ..items.map(it => text(size: size-body, fill: color-secondary, it)),
+          ..items.map(it => text(size: size-body, fill: color-secondary, render_md(it))),
           spacing: 4pt,
           tight: true
         )
@@ -701,6 +766,8 @@
       leading: 0.6em,
     )
 
+    show link: set text(fill: color-link)
+
     // Renderizar encabezado automáticamente si hay datos personales
     if "datos_personales" in cv-data {
       cv_header(cv-data.datos_personales)
@@ -711,7 +778,7 @@
       let tipo = seccion.at("tipo", default: "texto")
       let titulo = seccion.at("titulo", default: "")
 
-      if tipo == "texto" [
+      if tipo == "texto" or tipo == "markdown" [
         #render_text(titulo, seccion.at("contenido", default: ""))
       ] else if tipo == "entradas" [
         #render_entries(titulo, seccion.at("items", default: ()))
