@@ -111,7 +111,6 @@ export function SectionManager({ sections, onChange }: SectionManagerProps) {
             <Button
               type="button"
               variant="default"
-              size="sm"
               disabled
               className="w-full gap-2 shadow-cyan-glow"
             >

@@ -53,9 +53,6 @@ export function HeaderBrand({
           alt="Killa CV Logo"
           className="size-full rounded-lg object-contain"
         />
-        <AvatarFallback className="rounded-lg bg-primary/10 font-heading text-xs font-bold text-primary">
-          KC
-        </AvatarFallback>
       </Avatar>
       <div className="flex items-center gap-2.5">
         <h1 className="font-heading text-xl font-bold tracking-tight text-foreground sm:text-2xl">
