@@ -1,6 +1,6 @@
 // =============================================================================
 // CV Engine — Single-File Bundled Distribution
-// Generated automatically by scripts/bundle.py on 2026-09-28 14:49:02
+// Generated automatically by scripts/bundle.py on 2026-09-28 15:16:15
 // Engine compatible with Typst v0.15+
 // =============================================================================
 
@@ -89,11 +89,17 @@
 /// Módulo nativo universal de procesamiento Markdown para Typst (v0.15+)
 /// 100% offline y desacoplado, sin paquetes externos de Typst Universe.
 ///
-/// Soporta de forma segura:
+/// Soporta de forma segura y completa:
 /// - Enlaces: [texto](url) -> link("url")[texto]
 /// - Negrita: **texto** o __texto__
 /// - Cursiva: *texto* o _texto_
 /// - Negrita + Cursiva: ***texto*** o ___texto___
+/// - Tachado: ~~texto~~ -> strike[texto]
+/// - Resaltado: ==texto== -> highlight[texto]
+/// - Subrayado: <u>texto</u> o ++texto++ -> underline[texto]
+/// - Superíndice: ^texto^ -> super[texto]
+/// - Subíndice: ~texto~ -> sub[texto]
+/// - Citas / Blockquotes: > cita -> quote[cita]
 /// - Código en línea: `código`
 /// - Párrafos múltiples con saltos de línea dobles
 /// - Escape automático de caracteres propios de Typst (#, $, @) para evitar
@@ -122,13 +128,32 @@
   t = t.replace(regex("\*\*(.*?)\*\*"), m => "#strong[" + m.captures.at(0) + "]")
   t = t.replace(regex("__(.*?)__"), m => "#strong[" + m.captures.at(0) + "]")
 
-  // 5. Cursiva con asteriscos: *texto* -> #emph[texto]
+  // 5. Tachado: ~~texto~~ -> #strike[texto]
+  t = t.replace(regex("~~(.*?)~~"), m => "#strike[" + m.captures.at(0) + "]")
+
+  // 6. Resaltado: ==texto== -> #highlight[texto]
+  t = t.replace(regex("==(.*?)=="), m => "#highlight[" + m.captures.at(0) + "]")
+
+  // 7. Subrayado: <u>texto</u> o ++texto++ -> #underline[texto]
+  t = t.replace(regex("<u>(.*?)</u>"), m => "#underline[" + m.captures.at(0) + "]")
+  t = t.replace(regex("\+\+(.*?)\+\+"), m => "#underline[" + m.captures.at(0) + "]")
+
+  // 8. Superíndice: ^texto^ -> #super[texto]
+  t = t.replace(regex("\^([^\^\s]+?)\^"), m => "#super[" + m.captures.at(0) + "]")
+
+  // 9. Subíndice: ~texto~ -> #sub[texto] (después de ~~tachado~~)
+  t = t.replace(regex("(^|[^\~])\~([^\~\s]+?)\~([^\~]|$)"), m => m.captures.at(0) + "#sub[" + m.captures.at(1) + "]" + m.captures.at(2))
+
+  // 10. Cursiva con asteriscos: *texto* -> #emph[texto]
   t = t.replace(regex("(^|[^\*])\*([^\*\n]+?)\*([^\*]|$)"), m => m.captures.at(0) + "#emph[" + m.captures.at(1) + "]" + m.captures.at(2))
 
-  // 6. Cursiva con guiones bajos: _texto_ -> #emph[texto]
+  // 11. Cursiva con guiones bajos: _texto_ -> #emph[texto]
   t = t.replace(regex("(^|[^\w])_([^\_\n]+?)_([^\w]|$)"), m => m.captures.at(0) + "#emph[" + m.captures.at(1) + "]" + m.captures.at(2))
 
-  // 7. Sanitizar asteriscos o guiones bajos huérfanos para evitar errores de delimitador
+  // 12. Citas / Blockquotes al inicio de línea: > cita -> #quote[...]
+  t = t.replace(regex("(^|\n)>\s*([^\n]+)"), m => m.captures.at(0) + "#quote[" + m.captures.at(1) + "]")
+
+  // 13. Sanitizar asteriscos o guiones bajos huérfanos para evitar errores de delimitador
   t = t.replace("*", "\\*")
   t = t.replace(regex("(^|\s)_"), m => m.captures.at(0) + "\\_")
 
@@ -177,7 +202,7 @@
         size: size-section,
         weight: "bold",
         fill: color-primary,
-        upper(title)
+        render_md(upper(title))
       )
       #v(1.5pt)
       #line(length: 100%, stroke: 0.6pt + color-line)
@@ -203,7 +228,7 @@
           columns: (1fr, auto),
           align: (left + top, right + top),
           text(weight: "bold", size: size-body, render_md(primary-left)),
-          text(weight: "medium", size: size-sub, primary-right)
+          text(weight: "medium", size: size-sub, render_md(primary-right))
         )
       ]
 
@@ -214,7 +239,7 @@
           columns: (1fr, auto),
           align: (left + top, right + top),
           text(style: "italic", size: size-body, render_md(secondary-left)),
-          text(style: "italic", size: size-sub, fill: color-muted, secondary-right)
+          text(style: "italic", size: size-sub, fill: color-muted, render_md(secondary-right))
         )
       ]
 
@@ -246,7 +271,7 @@
           size: size-name,
           weight: "bold",
           tracking: 0.5pt,
-          datos.at("nombre_completo", default: datos.at("name", default: ""))
+          render_md(datos.at("nombre_completo", default: datos.at("name", default: "")))
         )
 
         // Título o rol
@@ -268,14 +293,14 @@
             let target-url = c.at("url", default: none)
 
             if target-url != none and target-url != "" {
-              rendered-items.push(link(target-url, text(fill: color-link, val)))
+              rendered-items.push(link(target-url, text(fill: color-link, render_md(val))))
             } else if val.starts-with("http://") or val.starts-with("https://") {
               let clean = val.replace("https://", "").replace("http://", "")
-              rendered-items.push(link(val, text(fill: color-link, clean)))
+              rendered-items.push(link(val, text(fill: color-link, render_md(clean))))
             } else if val.contains("@") {
-              rendered-items.push(link("mailto:" + val, text(fill: color-link, val)))
+              rendered-items.push(link("mailto:" + val, text(fill: color-link, render_md(val))))
             } else {
-              rendered-items.push(text(val))
+              rendered-items.push(text(render_md(val)))
             }
           }
         } else if type(contact-raw) == dictionary {
@@ -283,11 +308,11 @@
             if val != "" and val != none {
               if val.starts-with("http://") or val.starts-with("https://") {
                 let clean = val.replace("https://", "").replace("http://", "")
-                rendered-items.push(link(val, text(fill: color-link, clean)))
+                rendered-items.push(link(val, text(fill: color-link, render_md(clean))))
               } else if val.contains("@") {
-                rendered-items.push(link("mailto:" + val, text(fill: color-link, val)))
+                rendered-items.push(link("mailto:" + val, text(fill: color-link, render_md(val))))
               } else {
-                rendered-items.push(text(val))
+                rendered-items.push(text(render_md(val)))
               }
             }
           }
@@ -366,7 +391,7 @@
 
         block(width: 100%, spacing: space-item)[
           #if cat != "" [
-            #text(weight: "bold", size: size-body, cat + ": ")
+            #text(weight: "bold", size: size-body)[#render_md(cat): ]
           ]
           #text(
             size: size-body,
@@ -501,7 +526,7 @@
         weight: "bold",
         fill: color-primary,
         tracking: 0.5pt,
-        upper(title)
+        render_md(upper(title))
       )
       #v(2pt)
       #line(length: 100%, stroke: 0.8pt + color-line)
@@ -526,7 +551,7 @@
           columns: (1fr, auto),
           align: (left + top, right + top),
           text(weight: "bold", size: size-body, fill: color-primary, render_md(primary-left)),
-          text(weight: "medium", size: size-sub, fill: color-muted, primary-right)
+          text(weight: "medium", size: size-sub, fill: color-muted, render_md(primary-right))
         )
       ]
 
@@ -537,7 +562,7 @@
           columns: (1fr, auto),
           align: (left + top, right + top),
           text(weight: "medium", size: size-body, fill: color-secondary, render_md(secondary-left)),
-          text(size: size-sub, fill: color-muted, secondary-right)
+          text(size: size-sub, fill: color-muted, render_md(secondary-right))
         )
       ]
 
@@ -575,14 +600,14 @@
         let target-url = c.at("url", default: none)
 
         if target-url != none and target-url != "" {
-          rendered-items.push(link(target-url, text(fill: color-link, weight: "medium", val)))
+          rendered-items.push(link(target-url, text(fill: color-link, weight: "medium", render_md(val))))
         } else if val.starts-with("http://") or val.starts-with("https://") {
           let clean = val.replace("https://", "").replace("http://", "")
-          rendered-items.push(link(val, text(fill: color-link, weight: "medium", clean)))
+          rendered-items.push(link(val, text(fill: color-link, weight: "medium", render_md(clean))))
         } else if val.contains("@") {
-          rendered-items.push(link("mailto:" + val, text(fill: color-link, weight: "medium", val)))
+          rendered-items.push(link("mailto:" + val, text(fill: color-link, weight: "medium", render_md(val))))
         } else {
-          rendered-items.push(text(fill: color-secondary, val))
+          rendered-items.push(text(fill: color-secondary, render_md(val)))
         }
       }
     } else if type(contact-raw) == dictionary {
@@ -590,11 +615,11 @@
         if val != "" and val != none {
           if val.starts-with("http://") or val.starts-with("https://") {
             let clean = val.replace("https://", "").replace("http://", "")
-            rendered-items.push(link(val, text(fill: color-link, weight: "medium", clean)))
+            rendered-items.push(link(val, text(fill: color-link, weight: "medium", render_md(clean))))
           } else if val.contains("@") {
-            rendered-items.push(link("mailto:" + val, text(fill: color-link, weight: "medium", val)))
+            rendered-items.push(link("mailto:" + val, text(fill: color-link, weight: "medium", render_md(val))))
           } else {
-            rendered-items.push(text(fill: color-secondary, val))
+            rendered-items.push(text(fill: color-secondary, render_md(val)))
           }
         }
       }
@@ -609,7 +634,7 @@
         weight: "bold",
         fill: color-primary,
         tracking: 0.3pt,
-        name
+        render_md(name)
       )
 
       #if title != "" [
@@ -702,7 +727,7 @@
 
         block(width: 100%, spacing: space-item)[
           #if cat != "" [
-            #text(weight: "bold", size: size-body, fill: color-primary, cat + ": ")
+            #text(weight: "bold", size: size-body, fill: color-primary)[#render_md(cat): ]
           ]
           #text(
             size: size-body,

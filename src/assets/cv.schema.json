@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://cv-schema.org/v1/cv.schema.json",
   "title": "Curriculum Vitae Universal Schema",
-  "description": "Esquema formal y estandarizado para la generación dinámica de CVs multi-plantilla en Typst con soporte para Markdown.",
+  "description": "Esquema formal y estandarizado para la generación dinámica de CVs multi-plantilla en Typst con soporte universal para Markdown en todos los campos y elementos.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -37,13 +37,13 @@
       "properties": {
         "nombre_completo": {
           "type": "string",
-          "description": "Nombre y apellidos completos del candidato.",
-          "markdownDescription": "Nombre y apellidos completos del candidato."
+          "description": "Nombre y apellidos completos del candidato. Soporta formato Markdown.",
+          "markdownDescription": "Nombre y apellidos completos del candidato. Soporta formato **Markdown** (`**negrita**`, `*cursiva*`, etc.)."
         },
         "titulo": {
           "type": "string",
-          "description": "Título profesional, carrera en curso o especialidad visible bajo el nombre.",
-          "markdownDescription": "Título profesional, carrera en curso o especialidad visible bajo el nombre (soporta formato en línea como `**negrita**` o `*cursiva*`)."
+          "description": "Título profesional, carrera en curso o especialidad visible bajo el nombre. Soporta formato Markdown.",
+          "markdownDescription": "Título profesional, carrera en curso o especialidad visible bajo el nombre. Soporta formato **Markdown** (`**negrita**`, `*cursiva*`, `[enlace](url)`, `` `código` ``)."
         },
         "foto": {
           "type": "string",
@@ -74,8 +74,8 @@
               },
               "valor": {
                 "type": "string",
-                "description": "Texto visible del enlace o dato (ej. 'linkedin/usuario', 'github/usuario', '+54 9 388...').",
-                "markdownDescription": "Texto visible del enlace o dato (ej. `'linkedin.com/in/usuario'`, `'github.com/usuario'`, `'+54 9 388...'`)."
+                "description": "Texto visible del enlace o dato. Soporta formato Markdown.",
+                "markdownDescription": "Texto visible del enlace o dato. Soporta formato **Markdown** (ej. `'linkedin.com/in/usuario'`, `'**Remoto** - Buenos Aires'`, `'[Portfolio](https://...)'`)."
               },
               "url": {
                 "type": "string",
@@ -90,13 +90,13 @@
     "secciones": {
       "type": "array",
       "description": "Lista ordenada de secciones que compondrán el CV. El orden en este arreglo define el orden visual en el documento.",
-      "markdownDescription": "Lista ordenada de secciones que compondrán el CV. El orden en este arreglo define el orden visual en el documento.\n\nSoporta 5 tipos de maquetación universales: `texto`, `entradas`, `agrupado`, `lista` y `markdown`.",
+      "markdownDescription": "Lista ordenada de secciones que compondrán el CV. El orden en este arreglo define el orden visual en el documento.\n\nSoporta 5 tipos de maquetación universales: `texto`, `entradas`, `agrupado`, `lista` y `markdown`, todos con soporte nativo de **Markdown** en cada uno de sus campos.",
       "items": {
         "oneOf": [
           {
             "title": "Sección de Texto (Narrativo)",
             "description": "Párrafos justificados para Objetivo Profesional, Perfil, Filosofía de Trabajo, etc. Soporta formato Markdown.",
-            "markdownDescription": "Párrafos justificados para Objetivo Profesional, Perfil, Filosofía de Trabajo, etc.\n\n**Soporta formato Markdown en línea:** `**negrita**`, `*cursiva*`, `[enlace](url)`, `` `código` `` y párrafos con doble salto de línea.",
+            "markdownDescription": "Párrafos justificados para Objetivo Profesional, Perfil, Filosofía de Trabajo, etc.\n\n**Soporta formato Markdown en línea:** `**negrita**`, `*cursiva*`, `~~tachado~~`, `==resaltado==`, `<u>subrayado</u>`, `^super^`, `~sub~`, `[enlace](url)`, `` `código` `` y párrafos con doble salto de línea.",
             "type": "object",
             "additionalProperties": false,
             "required": [
@@ -107,8 +107,8 @@
             "properties": {
               "titulo": {
                 "type": "string",
-                "description": "Título visible de la sección en mayúsculas (ej. 'OBJETIVO PROFESIONAL').",
-                "markdownDescription": "Título visible de la sección en mayúsculas (ej. `'OBJETIVO PROFESIONAL'`)."
+                "description": "Título visible de la sección en mayúsculas (ej. 'OBJETIVO PROFESIONAL'). Soporta formato Markdown.",
+                "markdownDescription": "Título visible de la sección en mayúsculas (ej. `'OBJETIVO PROFESIONAL'`). Soporta formato **Markdown** (`**negrita**`, `*cursiva*`, etc.)."
               },
               "tipo": {
                 "type": "string",
@@ -117,15 +117,15 @@
               },
               "contenido": {
                 "type": "string",
-                "description": "Texto del párrafo corrido. Soporta formato Markdown (**negrita**, *cursiva*, [enlace](url), `código`).",
-                "markdownDescription": "Texto del párrafo corrido. Soporta formato **Markdown** (`**negrita**`, `*cursiva*`, `[enlace](url)`, `` `código` ``) y separación de párrafos con doble salto de línea (`\\n\\n`)."
+                "description": "Texto del párrafo corrido. Soporta formato Markdown completo.",
+                "markdownDescription": "Texto del párrafo corrido. Soporta formato **Markdown** (`**negrita**`, `*cursiva*`, `~~tachado~~`, `==resaltado==`, `<u>subrayado</u>`, `^super^`, `~sub~`, `[enlace](url)`, `` `código` ``) y separación de párrafos con doble salto de línea (`\\n\\n`)."
               }
             }
           },
           {
             "title": "Sección de Entradas (Timeline Harvard)",
             "description": "Entradas cronológicas de doble nivel para Experiencia Laboral, Formación Académica, Premios, Proyectos, Voluntariado.",
-            "markdownDescription": "Entradas cronológicas de doble nivel para Experiencia Laboral, Formación Académica, Premios, Proyectos, Voluntariado.\n\nSoporta formato **Markdown** en títulos, subtítulos, descripciones y viñetas.",
+            "markdownDescription": "Entradas cronológicas de doble nivel para Experiencia Laboral, Formación Académica, Premios, Proyectos, Voluntariado.\n\nSoporta formato **Markdown universal** en títulos, períodos/fechas, cargos, ubicaciones, descripciones y viñetas.",
             "type": "object",
             "additionalProperties": false,
             "required": [
@@ -136,8 +136,8 @@
             "properties": {
               "titulo": {
                 "type": "string",
-                "description": "Título visible de la sección en mayúsculas (ej. 'FORMACIÓN ACADÉMICA', 'EXPERIENCIA LABORAL').",
-                "markdownDescription": "Título visible de la sección en mayúsculas (ej. `'FORMACIÓN ACADÉMICA'`, `'EXPERIENCIA LABORAL'`)."
+                "description": "Título visible de la sección en mayúsculas (ej. 'FORMACIÓN ACADÉMICA', 'EXPERIENCIA LABORAL'). Soporta Markdown.",
+                "markdownDescription": "Título visible de la sección en mayúsculas (ej. `'FORMACIÓN ACADÉMICA'`, `'EXPERIENCIA LABORAL'`). Soporta formato **Markdown**."
               },
               "tipo": {
                 "type": "string",
@@ -154,27 +154,27 @@
                     "primario_izq": {
                       "type": "string",
                       "description": "Texto destacado en negrita a la izquierda (ej. Empresa, Universidad, Evento). Soporta Markdown.",
-                      "markdownDescription": "Texto destacado en negrita a la izquierda (ej. Empresa, Universidad, Evento). Soporta formato Markdown (`**negrita**`, `[enlace](url)`, `` `código` ``)."
+                      "markdownDescription": "Texto destacado en negrita a la izquierda (ej. Empresa, Universidad, Evento). Soporta formato **Markdown** (`**negrita**`, `[enlace](url)`, `` `código` ``)."
                     },
                     "primario_der": {
                       "type": "string",
-                      "description": "Período o fecha a la derecha (ej. '2023 - Presente', '2025-10-14').",
-                      "markdownDescription": "Período o fecha a la derecha (ej. `'2023 - Presente'`, `'2025-10-14'`)."
+                      "description": "Período o fecha a la derecha (ej. '2023 - Presente', '2025-10-14'). Soporta Markdown.",
+                      "markdownDescription": "Período o fecha a la derecha (ej. `'2023 - Presente'`, `'2025-10-14'`). Soporta formato **Markdown** (`**negrita**`, `*cursiva*`, etc.)."
                     },
                     "secundario_izq": {
                       "type": "string",
                       "description": "Subtítulo en cursiva a la izquierda (ej. Cargo, Título obtenido, Distinción). Soporta Markdown.",
-                      "markdownDescription": "Subtítulo en cursiva a la izquierda (ej. Cargo, Título obtenido, Distinción). Soporta formato Markdown (`[enlace](url)`, `` `código` ``)."
+                      "markdownDescription": "Subtítulo en cursiva a la izquierda (ej. Cargo, Título obtenido, Distinción). Soporta formato **Markdown** (`[enlace](url)`, `` `código` ``)."
                     },
                     "secundario_der": {
                       "type": "string",
-                      "description": "Ubicación o detalle secundario a la derecha (ej. 'Remoto', 'Jujuy, Argentina').",
-                      "markdownDescription": "Ubicación o detalle secundario a la derecha (ej. `'Remoto'`, `'Jujuy, Argentina'`)."
+                      "description": "Ubicación o detalle secundario a la derecha (ej. 'Remoto', 'Jujuy, Argentina'). Soporta Markdown.",
+                      "markdownDescription": "Ubicación o detalle secundario a la derecha (ej. `'Remoto'`, `'Jujuy, Argentina'`). Soporta formato **Markdown** (`**negrita**`, `*cursiva*`, `[enlace](url)`)."
                     },
                     "descripcion": {
                       "type": "string",
                       "description": "Breve párrafo descriptivo de la entrada (opcional). Soporta formato Markdown.",
-                      "markdownDescription": "Breve párrafo descriptivo de la entrada (opcional). Soporta formato **Markdown** (`**negrita**`, `*cursiva*`, `[enlace](url)`, `` `código` ``)."
+                      "markdownDescription": "Breve párrafo descriptivo de la entrada (opcional). Soporta formato **Markdown** (`**negrita**`, `*cursiva*`, `~~tachado~~`, `[enlace](url)`, `` `código` ``)."
                     },
                     "vinetas": {
                       "type": "array",
@@ -182,7 +182,7 @@
                         "type": "string"
                       },
                       "description": "Lista de logros o responsabilidades con viñetas asociadas a la entrada. Cada viñeta soporta formato Markdown.",
-                      "markdownDescription": "Lista de logros o responsabilidades asociadas a la entrada. Cada viñeta soporta formato **Markdown** (`**negrita**`, `*cursiva*`, `[enlace](url)`, `` `código` ``)."
+                      "markdownDescription": "Lista de logros o responsabilidades asociadas a la entrada. Cada viñeta soporta formato **Markdown** (`**negrita**`, `*cursiva*`, `~~tachado~~`, `==resaltado==`, `[enlace](url)`, `` `código` ``)."
                     }
                   }
                 }
@@ -192,7 +192,7 @@
           {
             "title": "Sección Agrupada (Categorías)",
             "description": "Categorías con elementos o tags para Habilidades, Certificaciones por Institución, Idiomas.",
-            "markdownDescription": "Categorías con elementos o tags para Habilidades, Certificaciones por Institución, Idiomas. Cada elemento soporta formato Markdown.",
+            "markdownDescription": "Categorías con elementos o tags para Habilidades, Certificaciones por Institución, Idiomas. Tanto categorías como elementos soportan formato Markdown.",
             "type": "object",
             "additionalProperties": false,
             "required": [
@@ -203,8 +203,8 @@
             "properties": {
               "titulo": {
                 "type": "string",
-                "description": "Título visible de la sección en mayúsculas (ej. 'HABILIDADES', 'CERTIFICACIONES Y CURSOS').",
-                "markdownDescription": "Título visible de la sección en mayúsculas (ej. `'HABILIDADES'`, `'CERTIFICACIONES Y CURSOS'`)."
+                "description": "Título visible de la sección en mayúsculas (ej. 'HABILIDADES', 'CERTIFICACIONES Y CURSOS'). Soporta Markdown.",
+                "markdownDescription": "Título visible de la sección en mayúsculas (ej. `'HABILIDADES'`, `'CERTIFICACIONES Y CURSOS'`). Soporta formato **Markdown**."
               },
               "tipo": {
                 "type": "string",
@@ -224,8 +224,8 @@
                   "properties": {
                     "categoria": {
                       "type": "string",
-                      "description": "Nombre de la categoría en negrita (ej. 'Habilidades Técnicas', 'Digital House', 'Idiomas').",
-                      "markdownDescription": "Nombre de la categoría en negrita (ej. `'Habilidades Técnicas'`, `'Digital House'`, `'Idiomas'`)."
+                      "description": "Nombre de la categoría en negrita (ej. 'Habilidades Técnicas', 'Digital House', 'Idiomas'). Soporta Markdown.",
+                      "markdownDescription": "Nombre de la categoría en negrita (ej. `'Habilidades Técnicas'`, `'Digital House'`, `'Idiomas'`). Soporta formato **Markdown** (`[enlace](url)`, `*cursiva*`, etc.)."
                     },
                     "elementos": {
                       "type": "array",
@@ -233,7 +233,7 @@
                         "type": "string"
                       },
                       "description": "Lista de etiquetas, tecnologías o cursos que componen este grupo. Soporta Markdown.",
-                      "markdownDescription": "Lista de etiquetas, tecnologías o cursos que componen este grupo. Cada elemento soporta formato **Markdown** (`**negrita**`, `*cursiva*`, `[enlace](url)`, `` `código` ``)."
+                      "markdownDescription": "Lista de etiquetas, tecnologías o cursos que componen este grupo. Cada elemento soporta formato **Markdown** (`**negrita**`, `*cursiva*`, `~~tachado~~`, `==resaltado==`, `[enlace](url)`, `` `código` ``)."
                     }
                   }
                 }
@@ -254,8 +254,8 @@
             "properties": {
               "titulo": {
                 "type": "string",
-                "description": "Título visible de la sección en mayúsculas (ej. 'PASATIEMPOS E INTERESES', 'LECTURAS').",
-                "markdownDescription": "Título visible de la sección en mayúsculas (ej. `'PASATIEMPOS E INTERESES'`, `'LECTURAS'`)."
+                "description": "Título visible de la sección en mayúsculas (ej. 'PASATIEMPOS E INTERESES', 'LECTURAS'). Soporta Markdown.",
+                "markdownDescription": "Título visible de la sección en mayúsculas (ej. `'PASATIEMPOS E INTERESES'`, `'LECTURAS'`). Soporta formato **Markdown**."
               },
               "tipo": {
                 "type": "string",
@@ -268,14 +268,14 @@
                   "type": "string"
                 },
                 "description": "Lista de viñetas que componen la sección. Soporta formato Markdown.",
-                "markdownDescription": "Lista de viñetas que componen la sección. Cada elemento soporta formato **Markdown** (`**negrita**`, `*cursiva*`, `[enlace](url)`, `` `código` ``)."
+                "markdownDescription": "Lista de viñetas que componen la sección. Cada elemento soporta formato **Markdown** (`**negrita**`, `*cursiva*`, `~~tachado~~`, `==resaltado==`, `[enlace](url)`, `` `código` ``)."
               }
             }
           },
           {
             "title": "Sección de Markdown Libre",
             "description": "Bloque de texto multilínea formateado en Markdown (párrafos, negritas, cursivas, enlaces y viñetas).",
-            "markdownDescription": "Bloque de texto multilínea formateado en **Markdown** (párrafos, `**negrita**`, `*cursiva*`, `[enlace](url)`, `` `código` `` y viñetas).\n\nIdeal para cartas de presentación, descripciones detalladas de proyectos o perfiles ejecutivos.",
+            "markdownDescription": "Bloque de texto multilínea formateado en **Markdown** (párrafos, `**negrita**`, `*cursiva*`, `~~tachado~~`, `==resaltado==`, `[enlace](url)`, `` `código` ``, `> citas` y viñetas).\n\nIdeal para cartas de presentación, descripciones detalladas de proyectos o perfiles ejecutivos.",
             "type": "object",
             "additionalProperties": false,
             "required": [
@@ -286,8 +286,8 @@
             "properties": {
               "titulo": {
                 "type": "string",
-                "description": "Título visible de la sección en mayúsculas (ej. 'PERFIL PROFESIONAL', 'PROYECTOS').",
-                "markdownDescription": "Título visible de la sección en mayúsculas (ej. `'PERFIL PROFESIONAL'`, `'PROYECTOS'`)."
+                "description": "Título visible de la sección en mayúsculas (ej. 'PERFIL PROFESIONAL', 'PROYECTOS'). Soporta Markdown.",
+                "markdownDescription": "Título visible de la sección en mayúsculas (ej. `'PERFIL PROFESIONAL'`, `'PROYECTOS'`). Soporta formato **Markdown**."
               },
               "tipo": {
                 "type": "string",
@@ -296,8 +296,8 @@
               },
               "contenido": {
                 "type": "string",
-                "description": "Texto enriquecido en Markdown (soporta **negrita**, *cursiva*, [enlace](url), `código` y párrafos con doble salto de línea).",
-                "markdownDescription": "Texto enriquecido en **Markdown** (soporta `**negrita**`, `*cursiva*`, `[texto](url)`, `` `código` `` y párrafos separados por doble salto de línea `\\n\\n`)."
+                "description": "Texto enriquecido en Markdown (soporta negritas, cursivas, tachados, enlaces, citas, código y párrafos con doble salto de línea).",
+                "markdownDescription": "Texto enriquecido en **Markdown** (soporta `**negrita**`, `*cursiva*`, `~~tachado~~`, `==resaltado==`, `[texto](url)`, `` `código` ``, `> citas` y párrafos separados por doble salto de línea `\\n\\n`)."
               }
             }
           }
