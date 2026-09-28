@@ -8,11 +8,11 @@ Este documento consolida la arquitectura completa, el flujo de datos, el protoco
 
 **Killa CV** es una plataforma de maquetación y generación de currículums de alta precisión, **100% local y sin dependencias en la nube**:
 
-- **Motor de Renderizado Documental:** [Typst v0.15.1+](https://typst.app/) (CLI nativo en Linux).
-- **Frontend:** React 19 + TypeScript + Vite.
+- **Motor de Renderizado Documental:** [Typst v0.15+](https://typst.app/) compilado directamente en WebAssembly en el navegador (`@myriaddreamin/typst.ts`).
+- **Frontend:** React 19 + TypeScript + Vite 8 (motor Rolldown).
 - **Estilos:** Tailwind CSS v4 (motor CSS-First con `@theme inline` y espacio de color OKLCH, paleta aeroespacial **Cyber Lunar**).
-- **Componentes UI:** [shadcn/ui](https://ui.shadcn.com/) (estilo `base-nova`, apoyado en `@base-ui/react` y `lucide-react`).
-- **Bridge Local:** Middleware de Vite (`vite-plugin-typst-compiler`) que ejecuta el binario local `typst` mediante `child_process`.
+- **Componentes UI:** [shadcn/ui](https://ui.shadcn.com/) (estilo `base-nova`, apoyado en `@base-ui/react` para Dialog y DropdownMenu, primitivas puras en HTML para Button, Input, Badge, Separator, Avatar).
+- **Arquitectura de Ejecución:** SPA 100% Client-Side sin servidores ni middlewares de backend. Compilación vectorial SVG y generación de binarios PDF directamente en memoria del navegador.
 
 ---
 
@@ -27,46 +27,41 @@ graph TD
         Preview[Visor Typst]
         
         Editor --> EditorToolbar["EditorToolbar (Limpiar, Ejemplo, Importar, Exportar)"]
-        Editor --> PersonalInfo["PersonalInfoForm (Datos Personales & Contactos)"]
-        Editor --> SectionManager["SectionManager (Secciones dinámicas colapsables)"]
+        Editor --> PersonalInfo["PersonalInfoForm (photo-upload, contact-list-editor)"]
+        Editor --> SectionManager["SectionManager (section-list-virtual, section-card-header, section-content-editor)"]
         
-        Preview --> PreviewToolbar["PreviewToolbar (Plantilla, Papel, CLI, Descargar PDF)"]
-        Preview --> TypstPreview["TypstPreview (Renderizado SVG vectorial, Zoom, Paginación)"]
+        Preview --> PreviewToolbar["PreviewToolbar (Plantilla, Papel, Descargar PDF, CliCommandDialog lazy)"]
+        Preview --> TypstPreview["TypstPreview (PreviewHeader, PreviewError, PreviewCanvas)"]
     end
 
-    subgraph Logic ["Lógica, Tipos y Sanitización"]
-        Types[src/types/cv.ts]
-        Defaults[src/lib/cv-defaults.ts]
+    subgraph StateLogic ["Lógica de Estado & Hooks"]
+        UseCVData["useCVData (Persistencia localStorage, Mutaciones atómicas)"]
+        UseCompiler["useTypstCompiler (Debounce 350ms, Cancelación, Paginación)"]
         Sanitizer[src/lib/cv-sanitizer.ts]
-        Service[src/services/typst-service.ts]
         Storage[("localStorage: killa-cv-data-v2")]
     end
 
-    subgraph Bridge ["Bridge Local Vite Server"]
-        VitePlugin[vite-plugins/typst-compiler.ts]
-        Cache[".killa-cache/ (cv.json, preview-*.svg, cv.pdf)"]
+    subgraph TypstWASM ["Motor Typst WebAssembly (Client-Side)"]
+        WasmEngine["WasmTypstEngine (@myriaddreamin/typst.ts)"]
+        TypstEngineSource["cv-engine.typ (Embebido)"]
+        VirtualFS["Memoria Virtual (Documento Typst + /avatar.png)"]
+        WasmCompiler["typst_ts_web_compiler.wasm"]
+        WasmRenderer["typst_ts_renderer.wasm"]
     end
 
-    subgraph TypstCLI ["Motor Local Typst (v0.15.1)"]
-        Schema[src/assets/cv.schema.json]
-        Engine[src/assets/cv-engine.typ]
-        Binary["typst compile --root ."]
-    end
-
-    App --> State[(cvData)]
-    State <--> Storage
-    State --> Sanitizer
-    Sanitizer --> Service
-    Service -->|POST /api/typst/compile-svg (debounce 350ms)| VitePlugin
-    Service -->|POST /api/typst/compile-pdf| VitePlugin
-    VitePlugin --> Cache
-    VitePlugin --> Binary
-    Binary --> Engine
-    Engine -.-> Schema
-    Binary -->|Páginas SVG / PDF| Cache
-    Cache --> VitePlugin
-    VitePlugin --> TypstPreview
+    App --> UseCVData
+    App --> UseCompiler
+    UseCVData <--> Storage
+    UseCVData --> Sanitizer
+    Sanitizer --> UseCompiler
+    UseCompiler --> WasmEngine
+    WasmEngine --> TypstEngineSource
+    WasmEngine --> VirtualFS
+    VirtualFS --> WasmCompiler
+    WasmCompiler --> WasmRenderer
+    WasmRenderer -->|Vector SVG / Blob PDF en memoria| Preview
 ```
+
 
 ---
 
@@ -233,3 +228,11 @@ pnpm run build
 # Ejecutar linter ultrarrápido (oxlint)
 pnpm run lint
 ```
+
+---
+
+## 9. Rendimiento, Bundling y Roadmaps de Optimización
+
+Para la planificación de empaquetado, presupuestos de rendimiento (*Performance Budgets*) y mitigación de advertencias de tamaño de chunks en Vite 8 / Rolldown, consultar:
+- [Roadmap de Refactorización y Optimización de Bundles](file:///mnt/datos/Proyectos/killa-cv/docs/ROADMAP_REFACTORIZACION.md)
+

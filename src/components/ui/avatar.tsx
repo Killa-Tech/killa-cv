@@ -1,16 +1,17 @@
 import * as React from "react"
-import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
 import { cn } from "cn"
+
+interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {
+  size?: "default" | "sm" | "lg"
+}
 
 function Avatar({
   className,
   size = "default",
   ...props
-}: AvatarPrimitive.Root.Props & {
-  size?: "default" | "sm" | "lg"
-}) {
+}: AvatarProps) {
   return (
-    <AvatarPrimitive.Root
+    <div
       data-slot="avatar"
       data-size={size}
       className={cn(
@@ -22,10 +23,15 @@ function Avatar({
   )
 }
 
-function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
+function AvatarImage({
+  className,
+  alt = "",
+  ...props
+}: React.ImgHTMLAttributes<HTMLImageElement>) {
   return (
-    <AvatarPrimitive.Image
+    <img
       data-slot="avatar-image"
+      alt={alt}
       className={cn(
         "aspect-square size-full rounded-full object-cover",
         className
@@ -38,9 +44,9 @@ function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
 function AvatarFallback({
   className,
   ...props
-}: AvatarPrimitive.Fallback.Props) {
+}: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <AvatarPrimitive.Fallback
+    <div
       data-slot="avatar-fallback"
       className={cn(
         "flex size-full items-center justify-center rounded-full bg-muted text-sm text-muted-foreground group-data-[size=sm]/avatar:text-xs",

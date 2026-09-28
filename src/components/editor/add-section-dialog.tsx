@@ -187,3 +187,5 @@ export function AddSectionDialog({ onAddSection }: AddSectionDialogProps) {
     </Dialog>
   )
 }
+
+export default AddSectionDialog
