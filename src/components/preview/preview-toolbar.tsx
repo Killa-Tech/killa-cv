@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Download, LayoutTemplate, Sparkles, Terminal } from 'lucide-react'
+import { Download, LayoutTemplate, Sparkles, Terminal, FileOutput } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -7,6 +7,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { Separator } from '@/components/ui/separator'
 import { getTypstCLICommand } from '@/services/typst-service'
 import type { FormatoPapel, PlantillaTipo } from '@/types/cv'
 
@@ -33,16 +40,14 @@ export function PreviewToolbar({
   const cliCommand = getTypstCLICommand(plantilla, paper)
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl border border-border/80 bg-card/80 backdrop-blur-md shadow-lg">
-      <div className="flex items-center gap-1.5">
+    <div className="flex flex-wrap items-center justify-between gap-2 p-2 rounded-xl border border-border/80 bg-card/80 backdrop-blur-md shadow-lg">
+      <div className="flex items-center gap-1">
         <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-heading" />
-            }
-          >
-            <LayoutTemplate className="size-3.5 text-primary" />
-            <span>Plantilla: {plantilla === 'harvard' ? 'Harvard' : 'Modern'}</span>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs font-heading text-muted-foreground hover:text-foreground">
+              <LayoutTemplate className="size-3.5 text-primary" />
+              <span className="hidden sm:inline">Plantilla:</span> {plantilla === 'harvard' ? 'Harvard' : 'Modern'}
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuItem onClick={() => onPlantillaChange('harvard')} className="cursor-pointer text-xs">
@@ -54,13 +59,13 @@ export function PreviewToolbar({
           </DropdownMenuContent>
         </DropdownMenu>
 
+        <Separator orientation="vertical" className="h-4 mx-0.5 hidden sm:block" />
+
         <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-heading" />
-            }
-          >
-            <span>Papel: {paper.toUpperCase()}</span>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs font-heading text-muted-foreground hover:text-foreground">
+              <span className="hidden sm:inline">Papel:</span> {paper.toUpperCase()}
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             <DropdownMenuItem onClick={() => onPaperChange('a4')} className="cursor-pointer text-xs">
@@ -73,39 +78,52 @@ export function PreviewToolbar({
         </DropdownMenu>
       </div>
 
-      <div className="flex items-center gap-1.5">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => setShowCliDialog(true)}
-          className="h-8 gap-1 text-xs text-muted-foreground"
-          title="Ver comando de compilación Typst"
-        >
-          <Terminal className="size-3.5" />
-          <span className="hidden md:inline">CLI</span>
-        </Button>
+      <div className="flex items-center gap-1.5 pr-1">
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowCliDialog(true)}
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              >
+                <Terminal className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Ver comando CLI de Typst</p>
+            </TooltipContent>
+          </Tooltip>
 
-        <Button
-          type="button"
-          variant="default"
-          size="sm"
-          onClick={onDownloadPDF}
-          disabled={isDownloadingPDF}
-          className="h-8 gap-1.5 text-xs shadow-cyan-glow"
-        >
-          {isDownloadingPDF ? (
-            <>
-              <Sparkles className="size-3.5 animate-spin" />
-              <span>Generando...</span>
-            </>
-          ) : (
-            <>
-              <Download className="size-3.5" />
-              <span>Descargar PDF</span>
-            </>
-          )}
-        </Button>
+          <Separator orientation="vertical" className="h-4 mx-0.5" />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                disabled={isDownloadingPDF}
+                className="h-8 gap-1.5 text-xs shadow-cyan-glow"
+              >
+                {isDownloadingPDF ? (
+                  <Sparkles className="size-3.5 animate-spin" />
+                ) : (
+                  <FileOutput className="size-3.5" />
+                )}
+                <span>Exportar</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onDownloadPDF} disabled={isDownloadingPDF} className="cursor-pointer text-xs gap-2">
+                <Download className="size-3.5" />
+                <span>Descargar PDF</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </TooltipProvider>
       </div>
 
       {showCliDialog && (
