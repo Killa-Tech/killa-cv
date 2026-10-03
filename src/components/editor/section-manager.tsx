@@ -1,5 +1,20 @@
 import * as React from 'react'
 import { Plus } from 'lucide-react'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import type { DragEndEvent } from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
 import { SectionListVirtual } from '@/components/editor/section-list-virtual'
 import { Button } from '@/components/ui/button'
 import type { SeccionCV } from '@/types/cv'
@@ -32,14 +47,23 @@ export function SectionManager({ sections, onChange }: SectionManagerProps) {
     onChange(next)
   }
 
-  const handleSwap = (fromIdx: number, toIdx: number) => {
-    if (toIdx < 0 || toIdx >= sections.length) return
-    const next = [...sections]
-    const temp = next[fromIdx]
-    next[fromIdx] = next[toIdx]
-    next[toIdx] = temp
-    onChange(next)
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = sections.findIndex((s, idx) => (s.id || `section-${idx}`) === active.id)
+      const newIndex = sections.findIndex((s, idx) => (s.id || `section-${idx}`) === over.id)
+      if (oldIndex !== -1 && newIndex !== -1) {
+        onChange(arrayMove(sections, oldIndex, newIndex))
+      }
+    }
   }
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   const handleDeleteSection = (index: number) => {
     onChange(sections.filter((_, i) => i !== index))
@@ -94,15 +118,24 @@ export function SectionManager({ sections, onChange }: SectionManagerProps) {
           <p className="text-xs">No hay secciones en el CV. Añade una para comenzar.</p>
         </div>
       ) : (
-        <SectionListVirtual
-          sections={sections}
-          collapsed={collapsed}
-          onToggleCollapse={toggleCollapse}
-          onUpdateSection={handleUpdateSection}
-          onMoveUp={(idx) => handleSwap(idx, idx - 1)}
-          onMoveDown={(idx) => handleSwap(idx, idx + 1)}
-          onDeleteSection={handleDeleteSection}
-        />
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={sections.map((s, idx) => s.id || `section-${idx}`)}
+            strategy={verticalListSortingStrategy}
+          >
+            <SectionListVirtual
+              sections={sections}
+              collapsed={collapsed}
+              onToggleCollapse={toggleCollapse}
+              onUpdateSection={handleUpdateSection}
+              onDeleteSection={handleDeleteSection}
+            />
+          </SortableContext>
+        </DndContext>
       )}
 
       <div className="pt-2">

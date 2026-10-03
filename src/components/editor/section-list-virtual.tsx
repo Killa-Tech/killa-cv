@@ -1,5 +1,6 @@
 import * as React from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
+import { useSortable } from '@dnd-kit/sortable'
 import { SectionCardHeader } from './section-card-header'
 import { SectionContentEditor } from './section-content-editor'
 import { Card } from '@/components/ui/card'
@@ -10,9 +11,79 @@ export interface SectionListProps {
   collapsed: Record<string, boolean>
   onToggleCollapse: (id: string) => void
   onUpdateSection: (index: number, updated: SeccionCV) => void
-  onMoveUp: (index: number) => void
-  onMoveDown: (index: number) => void
   onDeleteSection: (index: number) => void
+}
+
+interface SortableVirtualItemProps {
+  id: string
+  index: number
+  section: SeccionCV
+  virtualRow: any
+  isCollapsed: boolean
+  virtualizer: any
+  onToggleCollapse: () => void
+  onUpdateSection: (index: number, updated: SeccionCV) => void
+  onDeleteSection: (index: number) => void
+}
+
+function SortableVirtualItem({
+  id,
+  index,
+  section,
+  virtualRow,
+  isCollapsed,
+  virtualizer,
+  onToggleCollapse,
+  onUpdateSection,
+  onDeleteSection,
+}: SortableVirtualItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+
+  const style = {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    width: '100%',
+    transform: `translateY(${virtualRow.start}px) ${
+      transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : ''
+    }`,
+    transition: transition || undefined,
+    zIndex: isDragging ? 1 : 0,
+    opacity: isDragging ? 0.8 : 1,
+  }
+
+  return (
+    <div
+      ref={(node) => {
+        virtualizer.measureElement(node)
+        setNodeRef(node)
+      }}
+      data-index={virtualRow.index}
+      style={style}
+    >
+      <Card
+        className={`border-border/70 bg-card/70 backdrop-blur-sm transition-all hover:border-border ${
+          isDragging ? 'shadow-xl border-primary/50' : ''
+        }`}
+      >
+        <SectionCardHeader
+          tipo={section.tipo}
+          titulo={section.titulo}
+          isCollapsed={isCollapsed}
+          dragHandleProps={{ ...attributes, ...listeners }}
+          onTitleChange={(newTitle) => onUpdateSection(index, { ...section, titulo: newTitle })}
+          onToggleCollapse={onToggleCollapse}
+          onDelete={() => onDeleteSection(index)}
+        />
+        {!isCollapsed && (
+          <SectionContentEditor
+            section={section}
+            onChange={(updated) => onUpdateSection(index, updated)}
+          />
+        )}
+      </Card>
+    </div>
+  )
 }
 
 export function SectionListVirtual({
@@ -20,8 +91,6 @@ export function SectionListVirtual({
   collapsed,
   onToggleCollapse,
   onUpdateSection,
-  onMoveUp,
-  onMoveDown,
   onDeleteSection,
 }: SectionListProps) {
   const parentRef = React.useRef<HTMLDivElement>(null)
@@ -74,42 +143,18 @@ export function SectionListVirtual({
           const isCollapsed = collapsed[sectionKey] ?? true
 
           return (
-            <div
+            <SortableVirtualItem
               key={virtualRow.key}
-              data-index={virtualRow.index}
-              ref={virtualizer.measureElement}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
-            >
-              <Card className="border-border/70 bg-card/70 backdrop-blur-sm transition-all hover:border-border">
-                <SectionCardHeader
-                  index={virtualRow.index}
-                  totalSections={sections.length}
-                  tipo={sec.tipo}
-                  titulo={sec.titulo}
-                  isCollapsed={isCollapsed}
-                  onMoveUp={() => onMoveUp(virtualRow.index)}
-                  onMoveDown={() => onMoveDown(virtualRow.index)}
-                  onTitleChange={(newTitle) =>
-                    onUpdateSection(virtualRow.index, { ...sec, titulo: newTitle })
-                  }
-                  onToggleCollapse={() => onToggleCollapse(sectionKey)}
-                  onDelete={() => onDeleteSection(virtualRow.index)}
-                />
-
-                {!isCollapsed && (
-                  <SectionContentEditor
-                    section={sec}
-                    onChange={(updated) => onUpdateSection(virtualRow.index, updated)}
-                  />
-                )}
-              </Card>
-            </div>
+              id={sectionKey}
+              index={virtualRow.index}
+              section={sec}
+              virtualRow={virtualRow}
+              isCollapsed={isCollapsed}
+              virtualizer={virtualizer}
+              onToggleCollapse={() => onToggleCollapse(sectionKey)}
+              onUpdateSection={onUpdateSection}
+              onDeleteSection={onDeleteSection}
+            />
           )
         })}
       </div>

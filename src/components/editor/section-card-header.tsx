@@ -1,6 +1,6 @@
 import {
-  ArrowDown, ArrowUp, ChevronDown, ChevronUp,
-  FileText, FolderTree, List, TableProperties, Trash2,
+  ChevronDown, ChevronUp,
+  FileText, FolderTree, List, TableProperties, Trash2, GripVertical
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -9,13 +9,10 @@ import { Input } from '@/components/ui/input'
 import type { SeccionCV } from '@/types/cv'
 
 interface SectionCardHeaderProps {
-  index: number
-  totalSections: number
   tipo: SeccionCV['tipo']
   titulo: string
   isCollapsed: boolean
-  onMoveUp: () => void
-  onMoveDown: () => void
+  dragHandleProps?: Record<string, any>
   onTitleChange: (newTitle: string) => void
   onToggleCollapse: () => void
   onDelete: () => void
@@ -29,13 +26,10 @@ const SECTION_ICONS: Record<SeccionCV['tipo'], React.ReactNode> = {
 }
 
 export function SectionCardHeader({
-  index,
-  totalSections,
   tipo,
   titulo,
   isCollapsed,
-  onMoveUp,
-  onMoveDown,
+  dragHandleProps,
   onTitleChange,
   onToggleCollapse,
   onDelete,
@@ -43,28 +37,15 @@ export function SectionCardHeader({
   return (
     <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between gap-2 border-b border-border/30">
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <div className="flex items-center gap-0.5">
+        <div className="flex items-center gap-0.5" {...dragHandleProps}>
           <Button
             type="button"
             variant="ghost"
             size="icon-xs"
-            disabled={index === 0}
-            onClick={onMoveUp}
-            title="Mover hacia arriba"
-            className="size-6 text-muted-foreground hover:text-foreground"
+            className="size-6 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
+            title="Arrastrar para reordenar"
           >
-            <ArrowUp className="size-3" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-xs"
-            disabled={index === totalSections - 1}
-            onClick={onMoveDown}
-            title="Mover hacia abajo"
-            className="size-6 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowDown className="size-3" />
+            <GripVertical className="size-4" />
           </Button>
         </div>
 
