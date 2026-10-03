@@ -59,7 +59,7 @@ export function HeaderBrand({
           killa-cv
         </h1>
         <Badge variant="cyber" className="hidden py-0.5 text-[10px] sm:inline-flex">
-          v1.0
+          v1.1
         </Badge>
       </div>
     </div>
