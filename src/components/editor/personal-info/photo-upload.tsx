@@ -1,6 +1,7 @@
 import * as React from 'react'
 import { Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 
 interface PhotoUploadProps {
   foto?: string
@@ -52,11 +53,10 @@ export function PhotoUpload({ foto, onChange }: PhotoUploadProps) {
 
       {foto && (
         <div className="flex items-center gap-1.5">
-          <img
-            src={foto}
-            alt="Avatar"
-            className="size-7 rounded-full object-cover border border-primary/40"
-          />
+          <Avatar className="size-7 border border-primary/40">
+            <AvatarImage src={foto} alt="Avatar" className="object-cover" />
+            <AvatarFallback>AV</AvatarFallback>
+          </Avatar>
           <Button
             type="button"
             variant="ghost"
