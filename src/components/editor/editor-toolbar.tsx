@@ -3,10 +3,24 @@ import {
   Eraser,
   FileDown,
   FileUp,
+  FolderOpen,
   RotateCcw,
   Sparkles,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { Separator } from '@/components/ui/separator'
 
 interface EditorToolbarProps {
   onClearData: () => void
@@ -24,16 +38,15 @@ export function EditorToolbar({
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl border border-border/70 bg-card/70 backdrop-blur-md shadow-md">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center justify-between gap-2 p-2 rounded-xl border border-border/70 bg-card/70 backdrop-blur-md shadow-md">
+      <div className="flex items-center gap-2 pl-1">
         <Sparkles className="size-4 text-primary" />
         <span className="font-heading text-xs font-bold uppercase tracking-wider text-foreground">
-          Gestión de Datos
+          Gestión
         </span>
       </div>
 
-      <div className="flex items-center flex-wrap gap-1.5">
-        {/* Input oculto para importar JSON */}
+      <div className="flex items-center gap-1.5">
         <input
           ref={fileInputRef}
           type="file"
@@ -42,59 +55,68 @@ export function EditorToolbar({
           className="hidden"
         />
 
-        {/* Botón Importar JSON */}
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onClick={() => fileInputRef.current?.click()}
-          className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
-          title="Cargar archivo cv.json existente"
-        >
-          <FileUp className="size-3 text-primary" />
-          <span>Importar</span>
-        </Button>
+        <TooltipProvider delayDuration={300}>
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground">
+                    <FolderOpen className="size-3.5 text-primary" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Importar / Exportar Datos</p>
+              </TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => fileInputRef.current?.click()} className="cursor-pointer text-xs gap-2">
+                <FileUp className="size-3.5 text-primary" />
+                <span>Importar JSON</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onExportJSON} className="cursor-pointer text-xs gap-2">
+                <FileDown className="size-3.5 text-primary" />
+                <span>Exportar JSON</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        {/* Botón Exportar JSON */}
-        <Button
-          type="button"
-          variant="outline"
-          size="xs"
-          onClick={onExportJSON}
-          className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
-          title="Guardar archivo cv.json en tu disco"
-        >
-          <FileDown className="size-3 text-primary" />
-          <span>Exportar</span>
-        </Button>
+          <Separator orientation="vertical" className="h-4 mx-0.5" />
 
-        {/* Botón Cargar Ejemplo */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          onClick={onResetDefault}
-          className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground"
-          title="Cargar perfil genérico de demostración (John Doe)"
-        >
-          <RotateCcw className="size-3" />
-          <span>Ejemplo</span>
-        </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={onResetDefault}
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Cargar datos de ejemplo</p>
+            </TooltipContent>
+          </Tooltip>
 
-        <span className="text-border text-xs mx-0.5">|</span>
-
-        {/* Botón Limpiar Datos */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          onClick={onClearData}
-          className="h-7 text-xs gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-          title="Vaciar todos los campos y empezar un CV en blanco"
-        >
-          <Eraser className="size-3" />
-          <span>Limpiar Datos</span>
-        </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={onClearData}
+                className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <Eraser className="size-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Vaciar todos los campos</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </div>
   )
