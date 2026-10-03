@@ -88,20 +88,21 @@ export function AddSectionDialog({ onAddSection }: AddSectionDialogProps) {
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {SECTION_PRESETS.map((preset, idx) => (
-                <button
+                <Button
                   key={idx}
                   type="button"
+                  variant="outline"
                   onClick={() => handleSelectPreset(preset)}
-                  className="flex flex-col text-left p-2.5 rounded-lg border border-border/60 bg-surface-container-lowest/50 hover:bg-surface-container-low hover:border-primary/60 transition-all group"
+                  className="h-auto flex flex-col items-start text-left p-2.5 rounded-lg border border-border/60 bg-surface-container-lowest/50 hover:bg-surface-container-low hover:border-primary/60 transition-all group whitespace-normal"
                 >
-                  <div className="flex items-center gap-2 font-heading font-semibold text-xs text-foreground group-hover:text-primary transition-colors">
+                  <div className="flex items-center gap-2 font-heading font-semibold text-xs text-foreground group-hover:text-primary transition-colors w-full">
                     {getTipoIcon(preset.tipo)}
                     <span>{preset.titulo}</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-tight">
+                  <p className="text-[11px] text-muted-foreground mt-1 line-clamp-2 leading-tight font-normal">
                     {preset.descripcion}
                   </p>
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -155,19 +156,20 @@ export function AddSectionDialog({ onAddSection }: AddSectionDialogProps) {
                     desc: 'Párrafo narrativo',
                   },
                 ].map((item) => (
-                  <button
+                  <Button
                     key={item.tipo}
                     type="button"
+                    variant="outline"
                     onClick={() => setCustomTipo(item.tipo)}
-                    className={`flex flex-col text-left p-2 rounded-lg border text-xs transition-all ${
+                    className={`h-auto flex flex-col items-start text-left p-2 rounded-lg border text-xs transition-all whitespace-normal ${
                       customTipo === item.tipo
                         ? 'border-primary bg-primary/10 text-primary font-semibold'
                         : 'border-border/50 bg-surface-container-lowest/40 text-muted-foreground hover:border-border/80'
                     }`}
                   >
                     <span className="font-heading">{item.label}</span>
-                    <span className="text-[10px] text-muted-foreground mt-0.5">{item.desc}</span>
-                  </button>
+                    <span className="text-[10px] opacity-80 mt-0.5 font-normal">{item.desc}</span>
+                  </Button>
                 ))}
               </div>
             </div>

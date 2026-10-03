@@ -8,6 +8,7 @@ import { TypstPreview } from '@/components/preview/typst-preview'
 import { ThemeProvider } from '@/components/theme-provider'
 import { useCVData } from '@/hooks/use-cv-data'
 import { useTypstCompiler } from '@/hooks/use-typst-compiler'
+import { Button } from '@/components/ui/button'
 
 function App() {
   const {
@@ -48,29 +49,31 @@ function App() {
           {/* Barra de pestañas móvil (< lg) */}
           <div className="lg:hidden shrink-0 mb-2">
             <div className="grid grid-cols-2 p-1 rounded-lg bg-surface-container-low/70 border border-border/60">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setMobileTab('editor')}
-                className={`py-1.5 text-xs font-heading font-medium rounded-md transition-colors ${
+                className={`h-auto py-1.5 text-xs font-heading font-medium transition-colors ${
                   mobileTab === 'editor'
-                    ? 'bg-primary text-primary-foreground shadow'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary text-primary-foreground shadow hover:bg-primary/90'
+                    : 'text-muted-foreground hover:bg-transparent hover:text-foreground'
                 }`}
               >
                 Editor de CV
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setMobileTab('preview')}
-                className={`py-1.5 text-xs font-heading font-medium rounded-md transition-colors flex items-center justify-center gap-1.5 ${
+                className={`h-auto py-1.5 text-xs font-heading font-medium transition-colors flex items-center justify-center gap-1.5 ${
                   mobileTab === 'preview'
-                    ? 'bg-primary text-primary-foreground shadow'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-primary text-primary-foreground shadow hover:bg-primary/90'
+                    : 'text-muted-foreground hover:bg-transparent hover:text-foreground'
                 }`}
               >
                 <span>Vista Previa</span>
                 {isCompiling && <span className="size-1.5 rounded-full bg-primary inline-block animate-ping" />}
-              </button>
+              </Button>
             </div>
           </div>
 

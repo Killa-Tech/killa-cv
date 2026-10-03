@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 interface TagBadgeProps {
   label: string
@@ -13,14 +14,16 @@ export function TagBadge({ label, onRemove }: TagBadgeProps) {
       className="gap-1 text-xs py-0.5 px-2 bg-primary/10 border-primary/30 text-foreground"
     >
       <span>{label}</span>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         type="button"
         onClick={onRemove}
-        className="rounded-full hover:text-destructive focus:outline-none"
+        className="size-4 hover:bg-transparent rounded-full text-muted-foreground hover:text-destructive focus:outline-none"
         title={`Eliminar ${label}`}
       >
         <X className="size-2.5" />
-      </button>
+      </Button>
     </Badge>
   )
 }
