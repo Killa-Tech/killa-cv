@@ -1,0 +1,148 @@
+import * as React from 'react'
+import { Button } from '@/core/ui/button'
+import { useCVStore } from '@/store'
+import { SectionCard } from './section-card'
+import { AddSectionDialog } from './add-section-dialog'
+import { Plus, FoldVertical, UnfoldVertical, Layers } from 'lucide-react'
+
+export function SectionManager() {
+  const secciones = useCVStore((state) => state.cvData.secciones)
+  const addSection = useCVStore((state) => state.addSection)
+  const updateSection = useCVStore((state) => state.updateSection)
+  const removeSection = useCVStore((state) => state.removeSection)
+  const duplicateSection = useCVStore((state) => state.duplicateSection)
+  const reorderSections = useCVStore((state) => state.reorderSections)
+
+  const [isAddOpen, setIsAddOpen] = React.useState<boolean>(false)
+  const [collapsedMap, setCollapsedMap] = React.useState<Record<string, boolean>>({})
+
+  const toggleCollapse = (id: string) => {
+    setCollapsedMap((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }))
+  }
+
+  const collapseAll = () => {
+    const next: Record<string, boolean> = {}
+    secciones.forEach((s) => {
+      next[s.id] = true
+    })
+    setCollapsedMap(next)
+  }
+
+  const expandAll = () => {
+    setCollapsedMap({})
+  }
+
+  return (
+    <div className="space-y-3.5">
+      {/* Barra de cabecera del gestor de secciones */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2.5">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center size-6 rounded bg-primary/10 text-primary border border-primary/20">
+            <Layers className="size-3.5" />
+          </div>
+          <div>
+            <h2 className="text-xs font-heading font-bold uppercase tracking-wider text-foreground">
+              Secciones del CV ({secciones.length})
+            </h2>
+            <span className="text-[10px] text-muted-foreground font-mono">
+              El orden aquí define la disposición tipográfica en Typst
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          {secciones.length > 0 && (
+            <>
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                onClick={collapseAll}
+                className="text-[11px] text-muted-foreground hover:text-foreground h-7 px-2 gap-1"
+                title="Plegar todas las secciones"
+              >
+                <FoldVertical className="size-3" />
+                <span className="hidden sm:inline">Plegar</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="xs"
+                onClick={expandAll}
+                className="text-[11px] text-muted-foreground hover:text-foreground h-7 px-2 gap-1"
+                title="Desplegar todas las secciones"
+              >
+                <UnfoldVertical className="size-3" />
+                <span className="hidden sm:inline">Desplegar</span>
+              </Button>
+            </>
+          )}
+
+          <Button
+            type="button"
+            variant="default"
+            size="xs"
+            onClick={() => setIsAddOpen(true)}
+            className="text-xs font-heading font-semibold gap-1.5 h-7 px-2.5 shadow-sm"
+          >
+            <Plus className="size-3.5" />
+            Añadir Sección
+          </Button>
+        </div>
+      </div>
+
+      {/* Lista de Secciones */}
+      {secciones.length === 0 ? (
+        <div className="p-8 text-center rounded-xl border border-dashed border-border/70 bg-surface-container-low/20 space-y-3">
+          <p className="text-xs text-muted-foreground">
+            No hay secciones en el documento. Añade tu experiencia, educación o habilidades para comenzar.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setIsAddOpen(true)}
+            className="text-xs text-primary gap-1.5"
+          >
+            <Plus className="size-3.5" />
+            Añadir Primera Sección
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {secciones.map((section, index) => (
+            <SectionCard
+              key={section.id}
+              section={section}
+              index={index}
+              isFirst={index === 0}
+              isLast={index === secciones.length - 1}
+              isCollapsed={Boolean(collapsedMap[section.id])}
+              onToggleCollapse={() => toggleCollapse(section.id)}
+              onUpdate={(patch) => updateSection(section.id, patch)}
+              onRemove={() => removeSection(section.id)}
+              onDuplicate={() => duplicateSection(section.id)}
+              onMoveUp={() => reorderSections(index, index - 1)}
+              onMoveDown={() => reorderSections(index, index + 1)}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Diálogo para añadir sección */}
+      <AddSectionDialog
+        open={isAddOpen}
+        onOpenChange={setIsAddOpen}
+        onAdd={(tipo, titulo) => {
+          const newId = addSection(tipo, titulo)
+          // Desplegar automáticamente la nueva sección
+          setCollapsedMap((prev) => ({ ...prev, [newId]: false }))
+        }}
+      />
+    </div>
+  )
+}
