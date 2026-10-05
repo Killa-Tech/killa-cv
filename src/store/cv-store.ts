@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { generateId } from '@/core/lib/id'
 import {
   DEFAULT_CV,
   EMPTY_CV,
@@ -33,6 +34,7 @@ export interface CVStoreState {
   addSection: (tipo: TipoSeccion, titulo?: string) => string
   updateSection: (sectionId: string, patch: Partial<SeccionCV>) => void
   removeSection: (sectionId: string) => void
+  duplicateSection: (sectionId: string) => void
   reorderSections: (startIndex: number, endIndex: number) => void
 
   // Acciones: Sub-ítems de Entradas (Experiencia, Educación)
@@ -150,6 +152,61 @@ export const useCVStore = create<CVStoreState>()(
             secciones: state.cvData.secciones.filter((sec) => sec.id !== sectionId),
           },
         }))
+      },
+
+      duplicateSection: (sectionId) => {
+        set((state) => {
+          const index = state.cvData.secciones.findIndex((s) => s.id === sectionId)
+          if (index === -1) return state
+          const original = state.cvData.secciones[index]
+          let cloned: SeccionCV
+
+          if (original.tipo === 'texto') {
+            cloned = {
+              ...original,
+              id: generateId(),
+              titulo: `${original.titulo} (COPIA)`,
+            }
+          } else if (original.tipo === 'entradas') {
+            cloned = {
+              ...original,
+              id: generateId(),
+              titulo: `${original.titulo} (COPIA)`,
+              items: original.items.map((it) => ({
+                ...it,
+                id: generateId(),
+                vinetas: [...it.vinetas],
+              })),
+            }
+          } else if (original.tipo === 'agrupado') {
+            cloned = {
+              ...original,
+              id: generateId(),
+              titulo: `${original.titulo} (COPIA)`,
+              grupos: original.grupos.map((grp) => ({
+                ...grp,
+                id: generateId(),
+                elementos: [...grp.elementos],
+              })),
+            }
+          } else {
+            cloned = {
+              ...original,
+              id: generateId(),
+              titulo: `${original.titulo} (COPIA)`,
+              elementos: [...original.elementos],
+            }
+          }
+
+          const next = [...state.cvData.secciones]
+          next.splice(index + 1, 0, cloned)
+          return {
+            cvData: {
+              ...state.cvData,
+              secciones: next,
+            },
+          }
+        })
       },
 
       reorderSections: (startIndex, endIndex) => {
