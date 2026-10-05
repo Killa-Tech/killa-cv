@@ -40,6 +40,6 @@ export interface SectionEditorProps<T extends SeccionCV> {
 }
 
 export type ParseCVResult =
-  | { success: true; data: CVData }
-  | { success: false; error: string }
+  | { success: true; data: CVData; error?: never }
+  | { success: false; error: string; data?: never }
 
