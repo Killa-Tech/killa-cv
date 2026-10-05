@@ -2,8 +2,7 @@ import compilerWasmUrl from '@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_w
 import rendererWasmUrl from '@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer_bg.wasm?url'
 import { $typst } from '@myriaddreamin/typst.ts/dist/esm/contrib/snippet.mjs'
 import cvEngineSource from '@/assets/cv-engine.typ?raw'
-import { sanitizeCVData } from '@/domain/cv/sanitizer'
-import type { CVData, FormatoPapel, PlantillaTipo } from '@/domain/cv/types'
+import { sanitizeCVData, type CVData, type FormatoPapel, type PlantillaTipo } from '@/domain/cv'
 import type {
   TypstCompilerEngine,
   TypstCompileSVGResult,

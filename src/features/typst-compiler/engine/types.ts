@@ -1,4 +1,4 @@
-import type { CVData, FormatoPapel, PlantillaTipo } from '@/domain/cv/types'
+import type { CVData, FormatoPapel, PlantillaTipo } from '@/domain/cv'
 
 export interface TypstStatusResult {
   ok: boolean
