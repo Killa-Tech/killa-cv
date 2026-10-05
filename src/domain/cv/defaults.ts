@@ -1,3 +1,4 @@
+import { generateId } from '@/core/lib/id'
 import type {
   CVData,
   ContactoItem,
@@ -8,21 +9,18 @@ import type {
   SeccionEntradas,
   SeccionLista,
   SeccionTexto,
+  TipoSeccion,
 } from './types'
-
-function generateId(): string {
-  return Math.random().toString(36).substring(2, 9)
-}
 
 export const CONTACTO_PRESETS = [
   { tipo: 'email', label: 'Correo Electrónico', placeholder: 'ejemplo@dominio.com' },
   { tipo: 'telefono', label: 'Teléfono', placeholder: '+54 9 388 123-4567' },
-  { tipo: 'ubicacion', label: 'Ubicación', placeholder: 'Jujuy, Argentina' },
+  { tipo: 'ubicacion', label: 'Ubicación', placeholder: 'San Francisco, CA' },
   { tipo: 'linkedin', label: 'LinkedIn', placeholder: 'linkedin.com/in/usuario' },
   { tipo: 'github', label: 'GitHub', placeholder: 'github.com/usuario' },
   { tipo: 'portfolio', label: 'Portafolio Web', placeholder: 'https://miweb.dev' },
   { tipo: 'blog', label: 'Blog Personal', placeholder: 'https://blog.dev' },
-]
+] as const
 
 export const SECTION_PRESETS = [
   {
@@ -70,9 +68,9 @@ export const SECTION_PRESETS = [
     tipo: 'lista' as const,
     descripcion: 'Lista simple de intereses personales o comunitarios.',
   },
-]
+] as const
 
-export function createContacto(tipo = 'email', valor = '', url?: string): ContactoItem {
+export function createContacto(tipo = 'email', valor = '', url = ''): ContactoItem {
   return { id: generateId(), tipo, valor, url }
 }
 
@@ -96,34 +94,39 @@ export function createGrupoItem(categoria = 'General'): GrupoItem {
   }
 }
 
-export function createSection(tipo: SeccionCV['tipo'], titulo: string): SeccionCV {
+export function createSection(tipo: TipoSeccion, titulo = ''): SeccionCV {
   const id = generateId()
+  const defaultTitle = titulo || (tipo === 'entradas' ? 'NUEVA SECCIÓN' : tipo.toUpperCase())
+
   switch (tipo) {
     case 'texto':
       return {
         id,
-        titulo: titulo.toUpperCase(),
+        titulo: defaultTitle,
         tipo: 'texto',
         contenido: '',
       } as SeccionTexto
+
     case 'entradas':
       return {
         id,
-        titulo: titulo.toUpperCase(),
+        titulo: defaultTitle,
         tipo: 'entradas',
         items: [createEntradaItem()],
       } as SeccionEntradas
+
     case 'agrupado':
       return {
         id,
-        titulo: titulo.toUpperCase(),
+        titulo: defaultTitle,
         tipo: 'agrupado',
         grupos: [createGrupoItem('Principal')],
       } as SeccionAgrupado
+
     case 'lista':
       return {
         id,
-        titulo: titulo.toUpperCase(),
+        titulo: defaultTitle,
         tipo: 'lista',
         elementos: [''],
       } as SeccionLista
@@ -142,6 +145,7 @@ export const DEFAULT_CV: CVData = {
         id: generateId(),
         tipo: 'ubicacion',
         valor: 'San Francisco, CA',
+        url: '',
       },
       {
         id: generateId(),
@@ -280,9 +284,9 @@ export const EMPTY_CV: CVData = {
         id: generateId(),
         tipo: 'email',
         valor: '',
+        url: '',
       },
     ],
   },
   secciones: [],
 }
-
