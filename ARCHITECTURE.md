@@ -77,8 +77,8 @@ graph TD
     VirtualFS --> AvatarVirtual
     VirtualFS --> WasmCompiler
     WasmCompiler --> WasmRenderer
-    WasmRenderer -->|Páginas SVG vectoriales| Preview
-    WasmCompiler -->|Binario PDF (Uint8Array)| Preview
+    WasmRenderer -->|"Páginas SVG vectoriales"| Preview
+    WasmCompiler -->|"Binario PDF descargable"| Preview
     DocStorage --> Sanitizer
     DocStorage --> CVStore
 ```
