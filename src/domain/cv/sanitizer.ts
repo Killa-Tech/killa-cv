@@ -1,5 +1,5 @@
 import { cvDataSchema } from './schema'
-import type { CVData, ContactoItem, EntradaItem, GrupoItem, SeccionCV } from './types'
+import type { CVData, ContactoItem, EntradaItem, GrupoItem, ParseCVResult, SeccionCV } from './types'
 
 /**
  * Sanitiza y serializa el estado interno de CVData hacia un objeto JSON puro
@@ -146,13 +146,7 @@ export function sanitizeCVData(data: CVData): Record<string, unknown> {
  * Valida y transforma un payload JSON crudo (ej: desde un archivo importado o localStorage)
  * hacia la estructura tipada CVData garantizando IDs únicos y saneamiento de esquema.
  */
-export function parseAndValidateCVData(raw: unknown): {
-  success: true
-  data: CVData
-} | {
-  success: false
-  error: string
-} {
+export function parseAndValidateCVData(raw: unknown): ParseCVResult {
   try {
     const result = cvDataSchema.safeParse(raw)
     if (!result.success) {

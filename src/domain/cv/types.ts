@@ -38,3 +38,8 @@ export interface SectionEditorProps<T extends SeccionCV> {
   section: T
   onUpdate: (updated: Partial<T>) => void
 }
+
+export type ParseCVResult =
+  | { success: true; data: CVData }
+  | { success: false; error: string }
+

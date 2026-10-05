@@ -333,14 +333,14 @@ export const useCVStore = create<CVStoreState>()(
 
       loadCVData: (raw) => {
         const validated = parseAndValidateCVData(raw)
-        if (!validated.success) {
-          return { success: false, error: validated.error }
+        if (validated.success) {
+          set(() => ({
+            cvData: validated.data,
+            formatoPapel: 'a4',
+          }))
+          return { success: true }
         }
-        set(() => ({
-          cvData: validated.data,
-          formatoPapel: 'a4',
-        }))
-        return { success: true }
+        return { success: false, error: validated.error }
       },
     }),
     {
