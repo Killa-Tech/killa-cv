@@ -1,11 +1,15 @@
+import { cvDataSchema } from './schema'
 import type { CVData, ContactoItem, EntradaItem, GrupoItem, SeccionCV } from './types'
 
 /**
- * Sanitiza y serializa los datos de CVData eliminando ids internos y limpiando
- * campos vacíos o inconsistentes para respetar cv.schema.json con additionalProperties: false.
+ * Sanitiza y serializa el estado interno de CVData hacia un objeto JSON puro
+ * compatible con cv.schema.json (additionalProperties: false) y el motor Typst WASM.
+ *
+ * Elimina IDs internos de React/Zustand, limpia viñetas vacías, formatea URLs
+ * y excluye secciones o campos en blanco que puedan romper la maquetación.
  */
 export function sanitizeCVData(data: CVData): Record<string, unknown> {
-  // 1. Sanitizar Contactos
+  // 1. Sanitizar Contactos (excluyendo IDs internos y entradas vacías)
   const contactoSanitizado = (data.datos_personales?.contacto || [])
     .filter((c: ContactoItem) => c && c.tipo && c.tipo.trim() !== '' && c.valor && c.valor.trim() !== '')
     .map((c: ContactoItem) => {
@@ -37,7 +41,7 @@ export function sanitizeCVData(data: CVData): Record<string, unknown> {
     datosPersonales.fecha_nacimiento = data.datos_personales.fecha_nacimiento.trim()
   }
 
-  // 3. Sanitizar Secciones Polimórficas
+  // 3. Sanitizar Secciones Polimórficas (eliminando IDs y nodos vacíos)
   const seccionesSanitizadas = (data.secciones || [])
     .map((sec: SeccionCV) => {
       const titulo = (sec.titulo || 'SECCIÓN').trim()
@@ -81,6 +85,8 @@ export function sanitizeCVData(data: CVData): Record<string, unknown> {
           })
           .filter((it: Record<string, unknown>) => Object.keys(it).length > 0)
 
+        if (items.length === 0) return null
+
         return {
           titulo,
           tipo: 'entradas',
@@ -101,6 +107,8 @@ export function sanitizeCVData(data: CVData): Record<string, unknown> {
           })
           .filter((g: { categoria: string; elementos: string[] }) => g.categoria !== '' || g.elementos.length > 0)
 
+        if (grupos.length === 0) return null
+
         return {
           titulo,
           tipo: 'agrupado',
@@ -112,6 +120,9 @@ export function sanitizeCVData(data: CVData): Record<string, unknown> {
         const elementos = (sec.elementos || [])
           .map((e: string) => (typeof e === 'string' ? e.trim() : ''))
           .filter((e: string) => e !== '')
+
+        if (elementos.length === 0) return null
+
         return {
           titulo,
           tipo: 'lista',
@@ -123,12 +134,38 @@ export function sanitizeCVData(data: CVData): Record<string, unknown> {
     })
     .filter(Boolean)
 
-  const resultado: Record<string, unknown> = {
+  return {
     $schema: 'assets/cv.schema.json',
     plantilla: data.plantilla || 'harvard',
     datos_personales: datosPersonales,
     secciones: seccionesSanitizadas,
   }
+}
 
-  return resultado
+/**
+ * Valida y transforma un payload JSON crudo (ej: desde un archivo importado o localStorage)
+ * hacia la estructura tipada CVData garantizando IDs únicos y saneamiento de esquema.
+ */
+export function parseAndValidateCVData(raw: unknown): {
+  success: true
+  data: CVData
+} | {
+  success: false
+  error: string
+} {
+  try {
+    const result = cvDataSchema.safeParse(raw)
+    if (!result.success) {
+      const errorMsg = result.error.issues
+        .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+        .join('; ')
+      return { success: false, error: errorMsg }
+    }
+    return { success: true, data: result.data }
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : 'Error inesperado al validar estructura JSON',
+    }
+  }
 }
