@@ -1,70 +1,40 @@
-export type PlantillaTipo = 'harvard' | 'modern'
-export type FormatoPapel = 'a4' | 'us-letter'
+import type { z } from 'zod'
+import type {
+  contactoItemSchema,
+  cvDataSchema,
+  datosPersonalesSchema,
+  entradaItemSchema,
+  formatoPapelSchema,
+  grupoItemSchema,
+  plantillaSchema,
+  seccionAgrupadoSchema,
+  seccionEntradasSchema,
+  seccionListaSchema,
+  seccionSchema,
+  seccionTextoSchema,
+} from './schema'
 
-export interface ContactoItem {
-  id?: string
-  tipo: string
-  valor: string
-  url?: string
-}
+export type PlantillaTipo = z.infer<typeof plantillaSchema>
+export type FormatoPapel = z.infer<typeof formatoPapelSchema>
+export type TipoSeccion = 'texto' | 'entradas' | 'agrupado' | 'lista'
 
-export interface DatosPersonales {
-  nombre_completo: string
-  titulo?: string
-  foto?: string
-  fecha_nacimiento?: string
-  contacto: ContactoItem[]
-}
+export type ContactoItem = z.infer<typeof contactoItemSchema>
+export type DatosPersonales = z.infer<typeof datosPersonalesSchema>
+export type EntradaItem = z.infer<typeof entradaItemSchema>
+export type GrupoItem = z.infer<typeof grupoItemSchema>
 
-export interface EntradaItem {
-  id?: string
-  primario_izq?: string
-  primario_der?: string
-  secundario_izq?: string
-  secundario_der?: string
-  descripcion?: string
-  vinetas?: string[]
-}
+export type SeccionTexto = z.infer<typeof seccionTextoSchema>
+export type SeccionEntradas = z.infer<typeof seccionEntradasSchema>
+export type SeccionAgrupado = z.infer<typeof seccionAgrupadoSchema>
+export type SeccionLista = z.infer<typeof seccionListaSchema>
 
-export interface GrupoItem {
-  id?: string
-  categoria: string
-  elementos: string[]
-}
+export type SeccionCV = z.infer<typeof seccionSchema>
+export type CVData = z.infer<typeof cvDataSchema>
 
-export interface SeccionTexto {
-  id?: string
-  titulo: string
-  tipo: 'texto'
-  contenido: string
-}
-
-export interface SeccionEntradas {
-  id?: string
-  titulo: string
-  tipo: 'entradas'
-  items: EntradaItem[]
-}
-
-export interface SeccionAgrupado {
-  id?: string
-  titulo: string
-  tipo: 'agrupado'
-  grupos: GrupoItem[]
-}
-
-export interface SeccionLista {
-  id?: string
-  titulo: string
-  tipo: 'lista'
-  elementos: string[]
-}
-
-export type SeccionCV = SeccionTexto | SeccionEntradas | SeccionAgrupado | SeccionLista
-
-export interface CVData {
-  $schema?: string
-  plantilla?: PlantillaTipo
-  datos_personales: DatosPersonales
-  secciones: SeccionCV[]
+/**
+ * Propiedades estándar para cualquier editor de sección polimórfica (Strategy Pattern)
+ */
+export interface SectionEditorProps<T extends SeccionCV> {
+  section: T
+  onUpdate: (updated: Partial<T>) => void
 }
