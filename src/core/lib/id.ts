@@ -1,0 +1,10 @@
+/**
+ * Utility to generate stable unique identifiers (UUID v4)
+ * for CV sections, entries, groups and contacts.
+ */
+export function generateId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+  return 'id-' + Math.random().toString(36).substring(2, 9) + '-' + Date.now().toString(36)
+}

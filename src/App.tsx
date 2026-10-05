@@ -1,129 +1,39 @@
-import * as React from 'react'
-import { EditorToolbar } from '@/components/editor/editor-toolbar'
-import { PersonalInfoForm } from '@/components/editor/personal-info-form'
-import { SectionManager } from '@/components/editor/section-manager'
-import { Header } from '@/components/header'
-import { PreviewToolbar } from '@/components/preview/preview-toolbar'
-import { TypstPreview } from '@/components/preview/typst-preview'
-import { ThemeProvider } from '@/components/theme-provider'
-import { useCVData } from '@/hooks/use-cv-data'
-import { useTypstCompiler } from '@/hooks/use-typst-compiler'
+import { ThemeProvider } from '@/app/providers/theme-provider'
+import { Button } from '@/core/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/core/ui/card'
+import { Badge } from '@/core/ui/badge'
 
-function App() {
-  const {
-    cvData,
-    plantilla,
-    setPlantilla,
-    paper,
-    setPaper,
-    setPersonalInfo,
-    setSections,
-    resetDefault,
-    clearData,
-    exportJSON,
-    importJSON,
-  } = useCVData()
-
-  const {
-    pages,
-    totalPages,
-    isCompiling,
-    compileError,
-    typstVersion,
-    isDownloadingPDF,
-    downloadPDF,
-  } = useTypstCompiler(cvData, plantilla, paper)
-
-  const [mobileTab, setMobileTab] = React.useState<'editor' | 'preview'>('editor')
-
+export function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="killa-ui-theme">
-      <div className="relative flex h-dvh flex-col overflow-hidden bg-background font-sans text-foreground transition-colors duration-300">
-        <Header className="shrink-0" />
+      <div className="relative min-h-dvh flex flex-col items-center justify-center p-6 bg-background font-sans text-foreground overflow-hidden">
+        {/* Resplandor ambiental de fondo Cyber Lunar */}
+        <div className="pointer-events-none fixed -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/10 blur-[140px]" />
 
-        <main className="flex-1 min-h-0 w-full max-w-[1800px] mx-auto p-3 sm:p-4 overflow-hidden flex flex-col">
-          {/* Resplandor ambiental de fondo */}
-          <div className="pointer-events-none fixed -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/5 blur-[140px]" />
-
-          {/* Barra de pestañas móvil (< lg) */}
-          <div className="lg:hidden shrink-0 mb-2">
-            <div className="grid grid-cols-2 p-1 rounded-lg bg-surface-container-low/70 border border-border/60">
-              <button
-                type="button"
-                onClick={() => setMobileTab('editor')}
-                className={`py-1.5 text-xs font-heading font-medium rounded-md transition-colors ${
-                  mobileTab === 'editor'
-                    ? 'bg-primary text-primary-foreground shadow'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Editor de CV
-              </button>
-              <button
-                type="button"
-                onClick={() => setMobileTab('preview')}
-                className={`py-1.5 text-xs font-heading font-medium rounded-md transition-colors flex items-center justify-center gap-1.5 ${
-                  mobileTab === 'preview'
-                    ? 'bg-primary text-primary-foreground shadow'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <span>Vista Previa</span>
-                {isCompiling && <span className="size-1.5 rounded-full bg-primary inline-block animate-ping" />}
-              </button>
+        <Card className="w-full max-w-lg border-border/80 bg-card/80 backdrop-blur-md shadow-cyan-glow">
+          <CardHeader className="text-center space-y-2">
+            <div className="flex justify-center">
+              <Badge variant="outline" className="border-primary/40 text-primary font-mono text-xs uppercase tracking-wider">
+                Fase 0 Completada
+              </Badge>
             </div>
-          </div>
-
-          {/* Contenedor Workbench de Dos Columnas (Unificado para Móvil y Desktop) */}
-          <div className="grid lg:grid-cols-12 gap-4 lg:gap-6 flex-1 min-h-0 h-full">
-            {/* Columna Izquierda: Scrollable autónomo para todo el editor */}
-            <div
-              className={`lg:col-span-6 xl:col-span-5 flex-col h-full min-h-0 space-y-4 overflow-y-auto pr-1.5 scrollbar-thin ${
-                mobileTab === 'editor' ? 'flex' : 'hidden lg:flex'
-              }`}
-            >
-              <EditorToolbar
-                onClearData={clearData}
-                onResetDefault={resetDefault}
-                onExportJSON={exportJSON}
-                onImportJSON={importJSON}
-              />
-              <PersonalInfoForm
-                data={cvData.datos_personales}
-                onChange={setPersonalInfo}
-              />
-              <SectionManager
-                sections={cvData.secciones}
-                onChange={setSections}
-              />
+            <CardTitle className="font-heading text-2xl font-bold tracking-tight text-foreground">
+              Killa CV — Workbench
+            </CardTitle>
+            <CardDescription className="text-muted-foreground text-sm">
+              Estructura Feature-Based inicializada con éxito. Preparado para la Fase 1 (Dominio y Modelado de Datos).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 text-center">
+            <p className="text-xs text-muted-foreground font-mono">
+              Tokens de estilo, tipografías Space Grotesk / Inter y Shadcn UI activos en src/core/ui.
+            </p>
+            <div className="flex justify-center gap-3">
+              <Button variant="default">Botón Primario</Button>
+              <Button variant="outline">Botón Secundario</Button>
             </div>
-
-            {/* Columna Derecha: Visor Typst de altura completa autocontenido */}
-            <div
-              className={`lg:col-span-6 xl:col-span-7 flex-col h-full min-h-0 space-y-3 ${
-                mobileTab === 'preview' ? 'flex' : 'hidden lg:flex'
-              }`}
-            >
-              <PreviewToolbar
-                plantilla={plantilla}
-                onPlantillaChange={setPlantilla}
-                paper={paper}
-                onPaperChange={setPaper}
-                onDownloadPDF={downloadPDF}
-                isDownloadingPDF={isDownloadingPDF}
-              />
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <TypstPreview
-                  pages={pages}
-                  totalPages={totalPages}
-                  isCompiling={isCompiling}
-                  error={compileError}
-                  typstVersion={typstVersion}
-                />
-              </div>
-            </div>
-          </div>
-        </main>
+          </CardContent>
+        </Card>
       </div>
     </ThemeProvider>
   )

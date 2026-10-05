@@ -8,7 +8,7 @@ import type {
   SeccionEntradas,
   SeccionLista,
   SeccionTexto,
-} from '@/types/cv'
+} from './types'
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 9)

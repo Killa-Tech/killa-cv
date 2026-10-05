@@ -1,4 +1,4 @@
-import type { CVData, ContactoItem, EntradaItem, GrupoItem, SeccionCV } from '@/types/cv'
+import type { CVData, ContactoItem, EntradaItem, GrupoItem, SeccionCV } from './types'
 
 /**
  * Sanitiza y serializa los datos de CVData eliminando ids internos y limpiando
@@ -7,7 +7,7 @@ import type { CVData, ContactoItem, EntradaItem, GrupoItem, SeccionCV } from '@/
 export function sanitizeCVData(data: CVData): Record<string, unknown> {
   // 1. Sanitizar Contactos
   const contactoSanitizado = (data.datos_personales?.contacto || [])
-    .filter((c) => c && c.tipo && c.tipo.trim() !== '' && c.valor && c.valor.trim() !== '')
+    .filter((c: ContactoItem) => c && c.tipo && c.tipo.trim() !== '' && c.valor && c.valor.trim() !== '')
     .map((c: ContactoItem) => {
       const item: Record<string, string> = {
         tipo: c.tipo.trim(),
@@ -28,26 +28,27 @@ export function sanitizeCVData(data: CVData): Record<string, unknown> {
   if (data.datos_personales?.titulo && data.datos_personales.titulo.trim() !== '') {
     datosPersonales.titulo = data.datos_personales.titulo.trim()
   }
+
   if (data.datos_personales?.foto && data.datos_personales.foto.trim() !== '') {
     datosPersonales.foto = data.datos_personales.foto.trim()
   }
-  if (
-    data.datos_personales?.fecha_nacimiento &&
-    data.datos_personales.fecha_nacimiento.trim() !== ''
-  ) {
+
+  if (data.datos_personales?.fecha_nacimiento && data.datos_personales.fecha_nacimiento.trim() !== '') {
     datosPersonales.fecha_nacimiento = data.datos_personales.fecha_nacimiento.trim()
   }
 
-  // 3. Sanitizar Secciones
+  // 3. Sanitizar Secciones Polimórficas
   const seccionesSanitizadas = (data.secciones || [])
     .map((sec: SeccionCV) => {
-      const titulo = (sec.titulo || 'SECCIÓN').trim().toUpperCase()
+      const titulo = (sec.titulo || 'SECCIÓN').trim()
 
       if (sec.tipo === 'texto') {
+        const contenido = (sec.contenido || '').trim()
+        if (!contenido) return null
         return {
           titulo,
           tipo: 'texto',
-          contenido: sec.contenido || '',
+          contenido,
         }
       }
 
@@ -71,14 +72,14 @@ export function sanitizeCVData(data: CVData): Record<string, unknown> {
               entrada.descripcion = it.descripcion.trim()
             }
             const vinetas = (it.vinetas || [])
-              .map((v) => (typeof v === 'string' ? v.trim() : ''))
-              .filter((v) => v !== '')
+              .map((v: string) => (typeof v === 'string' ? v.trim() : ''))
+              .filter((v: string) => v !== '')
             if (vinetas.length > 0) {
               entrada.vinetas = vinetas
             }
             return entrada
           })
-          .filter((it) => Object.keys(it).length > 0)
+          .filter((it: Record<string, unknown>) => Object.keys(it).length > 0)
 
         return {
           titulo,
@@ -91,14 +92,14 @@ export function sanitizeCVData(data: CVData): Record<string, unknown> {
         const grupos = (sec.grupos || [])
           .map((g: GrupoItem) => {
             const elementos = (g.elementos || [])
-              .map((e) => (typeof e === 'string' ? e.trim() : ''))
-              .filter((e) => e !== '')
+              .map((e: string) => (typeof e === 'string' ? e.trim() : ''))
+              .filter((e: string) => e !== '')
             return {
               categoria: (g.categoria || 'General').trim(),
               elementos,
             }
           })
-          .filter((g) => g.categoria !== '' || g.elementos.length > 0)
+          .filter((g: { categoria: string; elementos: string[] }) => g.categoria !== '' || g.elementos.length > 0)
 
         return {
           titulo,
@@ -109,8 +110,8 @@ export function sanitizeCVData(data: CVData): Record<string, unknown> {
 
       if (sec.tipo === 'lista') {
         const elementos = (sec.elementos || [])
-          .map((e) => (typeof e === 'string' ? e.trim() : ''))
-          .filter((e) => e !== '')
+          .map((e: string) => (typeof e === 'string' ? e.trim() : ''))
+          .filter((e: string) => e !== '')
         return {
           titulo,
           tipo: 'lista',
