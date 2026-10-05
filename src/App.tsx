@@ -1,14 +1,20 @@
-import * as React from 'react'
 import { ThemeProvider } from '@/app/providers/theme-provider'
 import { Button } from '@/core/ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@/core/ui/card'
 import { Badge } from '@/core/ui/badge'
-import { DEFAULT_CV } from '@/domain/cv'
+import { useCVStore } from '@/store'
 import { useTypstCompiler } from '@/features/typst-compiler'
-import { FileDown, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react'
+import { FileDown, RefreshCw, CheckCircle2, AlertCircle, RotateCcw, Trash2 } from 'lucide-react'
 
 export function App() {
-  const [plantilla, setPlantilla] = React.useState<'harvard' | 'modern'>('harvard')
+  const cvData = useCVStore((state) => state.cvData)
+  const formatoPapel = useCVStore((state) => state.formatoPapel)
+  const setPlantilla = useCVStore((state) => state.setPlantilla)
+  const resetToDefault = useCVStore((state) => state.resetToDefault)
+  const clearData = useCVStore((state) => state.clearData)
+
+  const plantilla = cvData.plantilla || 'harvard'
+
   const {
     pages,
     totalPages,
@@ -18,7 +24,7 @@ export function App() {
     isDownloadingPDF,
     downloadPDF,
     recompile,
-  } = useTypstCompiler(DEFAULT_CV, plantilla, 'a4')
+  } = useTypstCompiler(cvData, plantilla, formatoPapel)
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="killa-ui-theme">
@@ -33,15 +39,15 @@ export function App() {
                 Killa CV
               </h1>
               <Badge variant="outline" className="border-primary/40 text-primary font-mono text-[10px] uppercase tracking-wider">
-                Fase 3: Typst WASM
+                Fase 4: Zustand Store
               </Badge>
             </div>
             <p className="text-xs text-muted-foreground">
-              Motor WebAssembly desacoplado y compilador reactivo con debounce y cancelación.
+              Estado atómico reactivo con persistencia automática en localStorage.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant={plantilla === 'harvard' ? 'default' : 'outline'}
               size="sm"
@@ -57,6 +63,24 @@ export function App() {
               className="text-xs"
             >
               Modern
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => resetToDefault()}
+              className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <RotateCcw className="size-3.5" />
+              Ejemplo
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => clearData()}
+              className="gap-1.5 text-xs text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="size-3.5" />
+              Vaciar
             </Button>
             <Button
               variant="outline"
@@ -82,7 +106,7 @@ export function App() {
         </header>
 
         <main className="max-w-5xl mx-auto w-full space-y-6">
-          {/* Barra de estado del compilador */}
+          {/* Barra de estado del compilador y store */}
           <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-lg bg-surface-container-low border border-border/60 text-xs">
             <div className="flex items-center gap-2">
               {isCompiling ? (
@@ -97,11 +121,15 @@ export function App() {
                   ? 'Compilando Typst en WebAssembly...'
                   : error
                   ? 'Error en compilación'
-                  : 'Compilación en memoria lista'}
+                  : 'Compilación reactiva en memoria lista'}
               </span>
             </div>
 
             <div className="flex items-center gap-3 text-muted-foreground font-mono text-[11px]">
+              <span>Candidato: <strong className="text-foreground">{cvData.datos_personales.nombre_completo || 'Sin nombre'}</strong></span>
+              <span>•</span>
+              <span>Secciones: {cvData.secciones.length}</span>
+              <span>•</span>
               <span>Páginas: {totalPages}</span>
               <span>•</span>
               <span>Motor: {typstVersion || 'Inicializando...'}</span>
