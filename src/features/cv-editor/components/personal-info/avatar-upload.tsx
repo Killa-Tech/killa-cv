@@ -1,7 +1,7 @@
-import * as React from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/core/ui/avatar'
 import { Button } from '@/core/ui/button'
 import { Camera, Trash2, User } from 'lucide-react'
+import { useRef } from 'react'
 
 interface AvatarUploadProps {
   foto?: string
@@ -10,7 +10,7 @@ interface AvatarUploadProps {
 }
 
 export function AvatarUpload({ foto, nombre, onChange }: AvatarUploadProps) {
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
