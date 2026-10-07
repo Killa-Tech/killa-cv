@@ -1,4 +1,3 @@
-import * as React from 'react'
 import { Button } from '@/core/ui/button'
 import { Input } from '@/core/ui/input'
 import { Plus, Trash2 } from 'lucide-react'
