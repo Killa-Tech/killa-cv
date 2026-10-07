@@ -1,9 +1,9 @@
-import * as React from 'react'
 import { Button } from '@/core/ui/button'
 import { useCVStore } from '@/store'
 import { SectionCard } from './section-card'
 import { AddSectionDialog } from './add-section-dialog'
 import { Plus, FoldVertical, UnfoldVertical, Layers } from 'lucide-react'
+import { useState } from 'react'
 
 export function SectionManager() {
   const secciones = useCVStore((state) => state.cvData.secciones)
@@ -13,8 +13,8 @@ export function SectionManager() {
   const duplicateSection = useCVStore((state) => state.duplicateSection)
   const reorderSections = useCVStore((state) => state.reorderSections)
 
-  const [isAddOpen, setIsAddOpen] = React.useState<boolean>(false)
-  const [collapsedMap, setCollapsedMap] = React.useState<Record<string, boolean>>({})
+  const [isAddOpen, setIsAddOpen] = useState<boolean>(false)
+  const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({})
 
   const toggleCollapse = (id: string) => {
     setCollapsedMap((prev) => ({
