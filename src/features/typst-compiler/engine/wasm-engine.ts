@@ -1,6 +1,9 @@
 import compilerWasmUrl from '@myriaddreamin/typst-ts-web-compiler/pkg/typst_ts_web_compiler_bg.wasm?url'
 import rendererWasmUrl from '@myriaddreamin/typst-ts-renderer/pkg/typst_ts_renderer_bg.wasm?url'
-import { $typst } from '@myriaddreamin/typst.ts/dist/esm/contrib/snippet.mjs'
+import liberationSansRegularUrl from '@/assets/fonts/liberation/LiberationSans-Regular.ttf?url'
+import liberationSansBoldUrl from '@/assets/fonts/liberation/LiberationSans-Bold.ttf?url'
+import liberationSansItalicUrl from '@/assets/fonts/liberation/LiberationSans-Italic.ttf?url'
+import { $typst, TypstSnippet } from '@myriaddreamin/typst.ts/dist/esm/contrib/snippet.mjs'
 import cvEngineSource from '@/assets/cv-engine.typ?raw'
 import { sanitizeCVData, type CVData, type FormatoPapel, type PlantillaTipo } from '@/domain/cv'
 import type {
@@ -9,14 +12,62 @@ import type {
   TypstStatusResult,
 } from './types'
 
-function dataUriToUint8Array(dataUri: string): Uint8Array {
-  const base64 = dataUri.split(',')[1] || ''
-  const binary = atob(base64)
+interface DecodedAvatar {
+  bytes: Uint8Array
+  extension: 'jpg' | 'png' | 'webp' | 'gif'
+}
+
+const VIRTUAL_AVATAR_PATHS = [
+  '/avatar.png',
+  '/avatar.jpg',
+  '/avatar.jpeg',
+  '/avatar.webp',
+  '/avatar.gif',
+]
+
+/**
+ * Decodifica un Data URI de imagen a binario (Uint8Array) y determina su extensión
+ * real tanto por cabecera MIME como por los bytes mágicos de la firma binaria.
+ */
+function decodeAvatarDataUri(dataUri: string): DecodedAvatar {
+  let extension: 'jpg' | 'png' | 'webp' | 'gif' = 'png'
+
+  const mimeMatch = dataUri.match(/^data:image\/([a-zA-Z0-9+]+);base64,/)
+  if (mimeMatch) {
+    const subtype = mimeMatch[1].toLowerCase()
+    if (subtype === 'jpeg' || subtype === 'jpg') {
+      extension = 'jpg'
+    } else if (subtype === 'webp') {
+      extension = 'webp'
+    } else if (subtype === 'gif') {
+      extension = 'gif'
+    } else if (subtype === 'png') {
+      extension = 'png'
+    }
+  }
+
+  const base64Part = dataUri.split(',')[1] || ''
+  const cleanBase64 = base64Part.replace(/[\r\n\s]/g, '')
+  const binary = atob(cleanBase64)
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i)
   }
-  return bytes
+
+  // Comprobación de seguridad mediante magic bytes reales del archivo
+  if (bytes.length >= 4) {
+    if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+      extension = 'jpg'
+    } else if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) {
+      extension = 'png'
+    } else if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) {
+      extension = 'webp'
+    } else if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) {
+      extension = 'gif'
+    }
+  }
+
+  return { bytes, extension }
 }
 
 class WasmTypstEngine implements TypstCompilerEngine {
@@ -36,7 +87,17 @@ class WasmTypstEngine implements TypstCompilerEngine {
         getModule: () => rendererWasmUrl,
       })
 
-      // 2. Mapear el template principal en el sistema de archivos virtual
+      // 2. Precargar fuentes Liberation Sans y habilitar Package Registry oficial de Typst Universe
+      $typst.use(
+        TypstSnippet.preloadFonts([
+          liberationSansRegularUrl,
+          liberationSansBoldUrl,
+          liberationSansItalicUrl,
+        ]),
+        TypstSnippet.fetchPackageRegistry()
+      )
+
+      // 3. Mapear el template principal en el sistema de archivos virtual
       const encoder = new TextEncoder()
       await $typst.mapShadow('/cv-engine.typ', encoder.encode(cvEngineSource))
 
@@ -61,6 +122,53 @@ class WasmTypstEngine implements TypstCompilerEngine {
     }
   }
 
+  private async prepareAvatar(datosPersonales?: Record<string, unknown>): Promise<void> {
+    if (!datosPersonales) return
+
+    const rawFoto = typeof datosPersonales.foto === 'string' ? datosPersonales.foto.trim() : undefined
+
+    if (!rawFoto) {
+      delete datosPersonales.foto
+      await this.cleanupVirtualAvatars()
+      return
+    }
+
+    if (rawFoto.startsWith('data:image')) {
+      try {
+        const { bytes, extension } = decodeAvatarDataUri(rawFoto)
+        const targetPath = `/avatar.${extension}`
+
+        // Limpiar cualquier otra variante previa para evitar colisiones
+        await this.cleanupVirtualAvatars(targetPath)
+
+        // Mapear los bytes con su extensión real correspondiente (ej. /avatar.jpg, /avatar.png, /avatar.webp)
+        await $typst.mapShadow(targetPath, bytes)
+        datosPersonales.foto = targetPath
+      } catch (err) {
+        console.warn('Advertencia: No se pudo decodificar el avatar en Base64. Se omitirá para evitar error de compilación:', err)
+        delete datosPersonales.foto
+        await this.cleanupVirtualAvatars()
+      }
+    } else if (VIRTUAL_AVATAR_PATHS.includes(rawFoto)) {
+      datosPersonales.foto = rawFoto
+    } else {
+      console.warn('Advertencia: La foto no es un Data URI resoluble en el navegador. Se omitirá:', rawFoto)
+      delete datosPersonales.foto
+      await this.cleanupVirtualAvatars()
+    }
+  }
+
+  private async cleanupVirtualAvatars(keepPath?: string): Promise<void> {
+    for (const path of VIRTUAL_AVATAR_PATHS) {
+      if (keepPath && path === keepPath) continue
+      try {
+        await $typst.unmapShadow(path)
+      } catch {
+        // Ignorar si el archivo no estaba previamente mapeado
+      }
+    }
+  }
+
   async compileSVG(
     cvData: CVData,
     plantilla: PlantillaTipo = 'harvard',
@@ -81,23 +189,9 @@ class WasmTypstEngine implements TypstCompilerEngine {
       const cleanData = sanitizeCVData(cvData)
       const encoder = new TextEncoder()
 
-      // Manejar foto avatar desacoplada
+      // Manejar foto avatar desacoplada asignando la extensión correcta
       const datosPersonales = cleanData.datos_personales as Record<string, unknown> | undefined
-      const foto = typeof datosPersonales?.foto === 'string' ? datosPersonales.foto : undefined
-
-      if (foto?.startsWith('data:image')) {
-        const photoBytes = dataUriToUint8Array(foto)
-        await $typst.mapShadow('/avatar.png', photoBytes)
-        if (datosPersonales) {
-          datosPersonales.foto = '/avatar.png'
-        }
-      } else {
-        try {
-          await $typst.unmapShadow('/avatar.png')
-        } catch {
-          // ignore si no existía previamente
-        }
-      }
+      await this.prepareAvatar(datosPersonales)
 
       const jsonStr = JSON.stringify(cleanData)
       await $typst.mapShadow('/cv.json', encoder.encode(jsonStr))
@@ -147,21 +241,7 @@ class WasmTypstEngine implements TypstCompilerEngine {
     const encoder = new TextEncoder()
 
     const datosPersonales = cleanData.datos_personales as Record<string, unknown> | undefined
-    const foto = typeof datosPersonales?.foto === 'string' ? datosPersonales.foto : undefined
-
-    if (foto?.startsWith('data:image')) {
-      const photoBytes = dataUriToUint8Array(foto)
-      await $typst.mapShadow('/avatar.png', photoBytes)
-      if (datosPersonales) {
-        datosPersonales.foto = '/avatar.png'
-      }
-    } else {
-      try {
-        await $typst.unmapShadow('/avatar.png')
-      } catch {
-        // ignore
-      }
-    }
+    await this.prepareAvatar(datosPersonales)
 
     const jsonStr = JSON.stringify(cleanData)
     await $typst.mapShadow('/cv.json', encoder.encode(jsonStr))
