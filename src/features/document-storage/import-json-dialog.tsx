@@ -187,7 +187,7 @@ export function ImportJsonDialog({ open, onOpenChange }: ImportJsonDialogProps) 
                   <CardTitle className="text-xs font-mono font-bold text-destructive">
                     Error de Validación:
                   </CardTitle>
-                  <CardDescription className="text-xs text-destructive font-mono whitespace-pre-wrap break-words">
+                  <CardDescription className="text-xs text-destructive font-mono whitespace-pre-wrap wrap-break-word">
                     {validationError}
                   </CardDescription>
                 </div>
