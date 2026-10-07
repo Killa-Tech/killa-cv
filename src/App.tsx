@@ -1,4 +1,3 @@
-import * as React from 'react'
 import { ThemeProvider } from '@/app/providers/theme-provider'
 import { AppHeader } from '@/features/app-header'
 import { CVEditor } from '@/features/cv-editor'
@@ -6,9 +5,10 @@ import { CVPreview } from '@/features/cv-preview'
 import { useCVStore } from '@/store'
 import { useTypstCompiler } from '@/features/typst-compiler'
 import { Edit3, Eye } from 'lucide-react'
+import { useState } from 'react'
 
 export function App() {
-  const [activeTab, setActiveTab] = React.useState<'editor' | 'preview'>('editor')
+  const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor')
   const cvData = useCVStore((state) => state.cvData)
   const formatoPapel = useCVStore((state) => state.formatoPapel)
   const compiler = useTypstCompiler(cvData, cvData.plantilla || 'harvard', formatoPapel)
