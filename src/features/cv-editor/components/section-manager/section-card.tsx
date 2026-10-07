@@ -1,4 +1,3 @@
-import * as React from 'react'
 import { Card, CardContent, CardHeader } from '@/core/ui/card'
 import { Input } from '@/core/ui/input'
 import { Button } from '@/core/ui/button'
@@ -14,6 +13,7 @@ import {
   Edit2,
   Check,
 } from 'lucide-react'
+import { useState } from 'react'
 
 interface SectionCardProps {
   section: SeccionCV
@@ -42,8 +42,8 @@ export function SectionCard({
   onMoveUp,
   onMoveDown,
 }: SectionCardProps) {
-  const [isEditingTitle, setIsEditingTitle] = React.useState<boolean>(false)
-  const [titleDraft, setTitleDraft] = React.useState<string>(section.titulo)
+  const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false)
+  const [titleDraft, setTitleDraft] = useState<string>(section.titulo)
 
   const meta = SECTION_TYPE_METADATA[section.tipo]
   const EditorComponent = SECTION_REGISTRY[section.tipo]

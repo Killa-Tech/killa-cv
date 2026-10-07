@@ -1,4 +1,3 @@
-import * as React from 'react'
 import {
   Dialog,
   DialogContent,
@@ -11,6 +10,7 @@ import { Input } from '@/core/ui/input'
 import { SECTION_PRESETS, type TipoSeccion } from '@/domain/cv'
 import { SECTION_TYPE_METADATA } from '../../registry/section-registry'
 import { Plus, Sparkles, FileText, Briefcase, Tags, List } from 'lucide-react'
+import { useState, type SubmitEvent } from 'react'
 
 interface AddSectionDialogProps {
   open: boolean
@@ -32,15 +32,15 @@ function getSectionTypeIcon(tipo: TipoSeccion) {
 }
 
 export function AddSectionDialog({ open, onOpenChange, onAdd }: AddSectionDialogProps) {
-  const [customTitle, setCustomTitle] = React.useState<string>('')
-  const [selectedType, setSelectedType] = React.useState<TipoSeccion>('entradas')
+  const [customTitle, setCustomTitle] = useState('')
+  const [selectedType, setSelectedType] = useState<TipoSeccion>('entradas')
 
   const handleSelectPreset = (tipo: TipoSeccion, titulo: string) => {
     onAdd(tipo, titulo)
     onOpenChange(false)
   }
 
-  const handleAddCustom = (e: React.FormEvent) => {
+  const handleAddCustom = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     const trimmed = customTitle.trim()
     if (!trimmed) return

@@ -1,8 +1,8 @@
-import * as React from 'react'
 import { Button } from '@/core/ui/button'
 import { Input } from '@/core/ui/input'
 import type { SectionEditorProps, SeccionLista } from '@/domain/cv'
 import { Plus, Trash2 } from 'lucide-react'
+import type { KeyboardEvent } from 'react'
 
 export function ListSectionEditor({
   section,
@@ -32,7 +32,7 @@ export function ListSectionEditor({
   }
 
   const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
+    e: KeyboardEvent<HTMLInputElement>,
     index: number
   ) => {
     if (e.key === 'Enter') {
