@@ -1,4 +1,3 @@
-import * as React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/core/ui/card'
 import { Input } from '@/core/ui/input'
 import { Label } from '@/core/ui/label'
@@ -7,9 +6,10 @@ import { useCVStore } from '@/store'
 import { AvatarUpload } from './avatar-upload'
 import { ContactListEditor } from './contact-list-editor'
 import { ChevronDown, ChevronUp, User } from 'lucide-react'
+import { useState } from 'react'
 
 export function PersonalInfoForm() {
-  const [isOpen, setIsOpen] = React.useState<boolean>(true)
+  const [isOpen, setIsOpen] = useState(true)
 
   const datosPersonales = useCVStore((state) => state.cvData.datos_personales)
   const updatePersonalInfo = useCVStore((state) => state.updatePersonalInfo)
