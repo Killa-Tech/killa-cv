@@ -1,0 +1,51 @@
+name: Sincronizar Wiki de GitHub
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/wiki/**'
+      - '.github/workflows/sync-wiki.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-wiki:
+    name: Sincronizar docs/wiki con GitHub Wiki
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Sincronizar páginas hacia GitHub Wiki
+        env:
+          ACTION_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          echo "Clonando repositorio GitHub Wiki..."
+          if ! git clone "https://x-access-token:${ACTION_TOKEN}@github.com/${{ github.repository }}.wiki.git" /tmp/wiki; then
+            echo "::error ::No se pudo clonar la wiki. Asegúrate de haber creado al menos una página inicial desde la web de GitHub para inicializar el repositorio."
+            exit 1
+          fi
+
+          echo "Limpiando páginas previas en la wiki..."
+          find /tmp/wiki -maxdepth 1 -name "*.md" -delete
+
+          echo "Copiando páginas actualizadas desde docs/wiki..."
+          find docs/wiki -name "*.md" -exec cp {} /tmp/wiki/ \;
+
+          cd /tmp/wiki
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+
+          if git diff --staged --quiet; then
+            echo "No hay cambios para sincronizar."
+          else
+            git commit -m "docs(wiki): sincronización automática desde docs/wiki [skip ci]"
+            git push origin master
+            echo "Wiki sincronizada con éxito en GitHub."
+          fi

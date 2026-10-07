@@ -60,19 +60,19 @@ Toda sección y página dentro de esta wiki se rige por cuatro principios fundam
 ## 3. Mapa de Contenidos
 
 ### 👤 Sección I: Guía para Usuarios Finales
-1. [**Primeros Pasos y Flujo de Trabajo**](./usuario/01-primeros-pasos.md): Recorrido por el workbench y edición básica.
-2. [**Catálogo y Selección de Plantillas**](./usuario/02-seleccion-de-plantillas.md): Diferencias entre Harvard y Modern, ajuste de papel y márgenes.
-3. [**Gestión de Datos: Importación y Exportación JSON**](./usuario/03-gestion-datos-json.md): Respaldo de información, migración y formato JSON estándar.
-4. [**Compilación, Previsualización y Descarga de PDF**](./usuario/04-compilacion-y-descarga-pdf.md): Previsualización reactiva en tiempo real y descarga instantánea.
-5. [**Privacidad, Seguridad y Modo Offline**](./usuario/05-privacidad-y-zero-server.md): Almacenamiento local, sandbox de datos e independencia de servidores.
+1. [**Primeros Pasos y Flujo de Trabajo**](Usuario-01-Primeros-Pasos): Recorrido por el workbench y edición básica.
+2. [**Catálogo y Selección de Plantillas**](Usuario-02-Seleccion-Plantillas): Diferencias entre Harvard y Modern, ajuste de papel y márgenes.
+3. [**Gestión de Datos: Importación y Exportación JSON**](Usuario-03-Gestion-Datos-JSON): Respaldo de información, migración y formato JSON estándar.
+4. [**Compilación, Previsualización y Descarga de PDF**](Usuario-04-Compilacion-Descarga-PDF): Previsualización reactiva en tiempo real y descarga instantánea.
+5. [**Privacidad, Seguridad y Modo Offline**](Usuario-05-Privacidad-Zero-Server): Almacenamiento local, sandbox de datos e independencia de servidores.
 
 ### 💻 Sección II: Guía de Arquitectura e Ingeniería
-1. [**Arquitectura Zero-Server y Flujo de Datos**](./desarrollador/01-arquitectura-zero-server.md): Modelo 100% Client-Side, ciclo de mutación y persistencia con Zustand.
-2. [**Motor Typst WebAssembly (WASM)**](./desarrollador/02-motor-typst-wasm.md): Compilación cliente, Virtual FS `$typst.mapShadow`, debounce y cancelación.
-3. [**Árbol de Dominios, Features y Estado Central**](./desarrollador/03-arbol-de-dominios-y-features.md): DDD, Vertical Slices, esquemas Zod con UUIDs estables.
-4. [**Sistema de Diseño Cyber Lunar**](./desarrollador/04-sistema-de-diseno-cyber-lunar.md): Tailwind CSS v4, espacio cromático OKLCH, primitivas y tokens.
-5. [**Guía de Extensibilidad: Nuevas Plantillas Typst**](./desarrollador/05-creacion-de-plantillas.md): Cómo diseñar un template Typst y conectarlo al dispatcher universal.
-6. [**Estrategia Polimórfica de Secciones**](./desarrollador/06-estrategia-polimorfica-secciones.md): Strategy Pattern en editores de CV y adición de tipos de sección.
+1. [**Arquitectura Zero-Server y Flujo de Datos**](Dev-01-Arquitectura-Zero-Server): Modelo 100% Client-Side, ciclo de mutación y persistencia con Zustand.
+2. [**Motor Typst WebAssembly (WASM)**](Dev-02-Motor-Typst-WASM): Compilación cliente, Virtual FS `$typst.mapShadow`, debounce y cancelación.
+3. [**Árbol de Dominios, Features y Estado Central**](Dev-03-Arbol-Dominios-Features): DDD, Vertical Slices, esquemas Zod con UUIDs estables.
+4. [**Sistema de Diseño Cyber Lunar**](Dev-04-Sistema-Diseno-Cyber-Lunar): Tailwind CSS v4, espacio cromático OKLCH, primitivas y tokens.
+5. [**Guía de Extensibilidad: Nuevas Plantillas Typst**](Dev-05-Creacion-Plantillas): Cómo diseñar un template Typst y conectarlo al dispatcher universal.
+6. [**Estrategia Polimórfica de Secciones**](Dev-06-Estrategia-Polimorfica): Strategy Pattern en editores de CV y adición de tipos de sección.
 
 ---
 
