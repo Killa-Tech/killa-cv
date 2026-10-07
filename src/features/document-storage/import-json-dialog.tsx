@@ -1,4 +1,3 @@
-import * as React from 'react'
 import {
   Dialog,
   DialogContent,
@@ -11,6 +10,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from '@/core/ui/card'
 import { useCVStore } from '@/store'
 import { parseAndValidateCVData, type CVData } from '@/domain/cv'
 import { UploadCloud, FileJson, CheckCircle2, AlertCircle, FileCode } from 'lucide-react'
+import { useRef, useState } from 'react'
 
 interface ImportJsonDialogProps {
   open: boolean
@@ -19,12 +19,12 @@ interface ImportJsonDialogProps {
 
 export function ImportJsonDialog({ open, onOpenChange }: ImportJsonDialogProps) {
   const loadCVData = useCVStore((state) => state.loadCVData)
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  const [fileName, setFileName] = React.useState<string | null>(null)
-  const [parsedData, setParsedData] = React.useState<CVData | null>(null)
-  const [validationError, setValidationError] = React.useState<string | null>(null)
-  const [isDragging, setIsDragging] = React.useState<boolean>(false)
+  const [fileName, setFileName] = useState<string | null>(null)
+  const [parsedData, setParsedData] = useState<CVData | null>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState<boolean>(false)
 
   const resetState = () => {
     setFileName(null)
