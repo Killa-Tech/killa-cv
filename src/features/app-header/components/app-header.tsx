@@ -1,4 +1,3 @@
-import * as React from 'react'
 import { Badge } from '@/core/ui/badge'
 import { Button } from '@/core/ui/button'
 import { useCVStore } from '@/store'
@@ -12,6 +11,7 @@ import {
   Trash2,
   MoonStar,
 } from 'lucide-react'
+import { useState } from 'react'
 
 interface AppHeaderProps {
   isCompiling?: boolean
@@ -28,7 +28,7 @@ export function AppHeader({
   const resetToDefault = useCVStore((state) => state.resetToDefault)
   const clearData = useCVStore((state) => state.clearData)
 
-  const [isImportOpen, setIsImportOpen] = React.useState<boolean>(false)
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const handleReset = () => {
     if (window.confirm('¿Deseas restablecer el CV con el perfil de ejemplo (John Doe)?')) {
