@@ -1,4 +1,3 @@
-import * as React from 'react'
 import { Card, CardContent, CardHeader } from '@/core/ui/card'
 import { Input } from '@/core/ui/input'
 import { Label } from '@/core/ui/label'
@@ -6,6 +5,7 @@ import { Button } from '@/core/ui/button'
 import type { EntradaItem } from '@/domain/cv'
 import { BulletListEditor } from './bullet-list-editor'
 import { ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 
 interface EntryCardProps {
   item: EntradaItem
@@ -15,7 +15,7 @@ interface EntryCardProps {
 }
 
 export function EntryCard({ item, index, onUpdate, onRemove }: EntryCardProps) {
-  const [isOpen, setIsOpen] = React.useState<boolean>(true)
+  const [isOpen, setIsOpen] = useState<boolean>(true)
 
   const headerTitle =
     item.primario_izq || item.secundario_izq || `Entrada #${index + 1}`
