@@ -1,8 +1,9 @@
-import * as React from 'react'
 import { useDebounce } from '@/core/hooks/use-debounce'
 import { downloadBlob } from '@/core/lib/download'
 import type { CVData, FormatoPapel, PlantillaTipo } from '@/domain/cv'
 import { wasmTypstEngine } from '../engine/wasm-engine'
+import { useCompilerStore } from '../store/compiler-store'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 export interface UseTypstCompilerOptions {
   debounceMs?: number
@@ -27,15 +28,21 @@ export function useTypstCompiler(
 ): UseTypstCompilerReturn {
   const { debounceMs = 350 } = options
 
-  const [pages, setPages] = React.useState<string[]>([])
-  const [totalPages, setTotalPages] = React.useState<number>(0)
-  const [isCompiling, setIsCompiling] = React.useState<boolean>(false)
-  const [error, setError] = React.useState<string | null>(null)
-  const [typstVersion, setTypstVersion] = React.useState<string | null>(null)
-  const [isDownloadingPDF, setIsDownloadingPDF] = React.useState<boolean>(false)
+  const [pages, setPages] = useState<string[]>([])
+  const [totalPages, setTotalPages] = useState<number>(0)
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState<boolean>(false)
+
+
+  // Estado global de compilador sincronizado via Zustand
+  const isCompiling = useCompilerStore((state) => state.isCompiling)
+  const error = useCompilerStore((state) => state.error)
+  const typstVersion = useCompilerStore((state) => state.typstVersion)
+  const setIsCompiling = useCompilerStore((state) => state.setIsCompiling)
+  const setError = useCompilerStore((state) => state.setError)
+  const setTypstVersion = useCompilerStore((state) => state.setTypstVersion)
 
   // Disparador manual para recompilar
-  const [recompileTrigger, setRecompileTrigger] = React.useState<number>(0)
+  const [recompileTrigger, setRecompileTrigger] = useState<number>(0)
 
   // Aplicar debounce sobre los datos reactivos del CV
   const debouncedCVData = useDebounce(cvData, debounceMs)
@@ -43,7 +50,7 @@ export function useTypstCompiler(
   const debouncedPaper = useDebounce(paper, debounceMs)
 
   // Verificar estado del motor Typst WASM al montar
-  React.useEffect(() => {
+  useEffect(() => {
     let isMounted = true
 
     wasmTypstEngine.checkStatus().then((status) => {
@@ -61,10 +68,10 @@ export function useTypstCompiler(
   }, [])
 
   // Referencia al AbortController activo para cancelar compilaciones previas
-  const abortControllerRef = React.useRef<AbortController | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // Efecto asíncrono puro que sincroniza la compilación ante cambios debounced o forzados
-  React.useEffect(() => {
+  useEffect(() => {
     let isCurrent = true
 
     if (abortControllerRef.current) {
@@ -117,12 +124,12 @@ export function useTypstCompiler(
   }, [debouncedCVData, debouncedPlantilla, debouncedPaper, recompileTrigger])
 
   // Función para forzar re-compilación inmediata
-  const recompile = React.useCallback(async () => {
+  const recompile = useCallback(async () => {
     setRecompileTrigger((prev) => prev + 1)
   }, [])
 
   // Función para descargar PDF
-  const downloadPDF = React.useCallback(
+  const downloadPDF = useCallback(
     async (customFilename?: string) => {
       setIsDownloadingPDF(true)
       try {
