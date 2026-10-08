@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/core/ui/card'
 import { Input } from '@/core/ui/input'
 import { Button } from '@/core/ui/button'
-import type { SeccionCV } from '@/domain/cv'
 import { SECTION_REGISTRY, SECTION_TYPE_METADATA } from '../../registry/section-registry'
 import {
   ChevronDown,
@@ -14,34 +13,39 @@ import {
   Check,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useCVStore } from '@/store'
 
 interface SectionCardProps {
-  section: SeccionCV
+  sectionId: string
   index: number
   isFirst: boolean
   isLast: boolean
   isCollapsed: boolean
   onToggleCollapse: () => void
-  onUpdate: (patch: Partial<SeccionCV>) => void
-  onRemove: () => void
-  onDuplicate: () => void
   onMoveUp: () => void
   onMoveDown: () => void
 }
 
 export function SectionCard({
-  section,
+  sectionId,
   index,
   isFirst,
   isLast,
   isCollapsed,
   onToggleCollapse,
-  onUpdate,
-  onRemove,
-  onDuplicate,
   onMoveUp,
   onMoveDown,
 }: SectionCardProps) {
+  const section = useCVStore((s) =>
+    s.cvData.secciones.find((sec) => sec.id === sectionId)
+  )
+  const updateSection = useCVStore((s) => s.updateSection)
+  const removeSection = useCVStore((s) => s.removeSection)
+  const duplicateSection = useCVStore((s) => s.duplicateSection)
+
+  if (!section) return null
+
+
   const [isEditingTitle, setIsEditingTitle] = useState<boolean>(false)
   const [titleDraft, setTitleDraft] = useState<string>(section.titulo)
 
@@ -51,7 +55,7 @@ export function SectionCard({
   const handleSaveTitle = () => {
     const trimmed = titleDraft.trim().toUpperCase()
     if (trimmed) {
-      onUpdate({ titulo: trimmed })
+      updateSection(sectionId, { titulo: trimmed })
     } else {
       setTitleDraft(section.titulo)
     }
@@ -162,7 +166,7 @@ export function SectionCard({
             type="button"
             variant="ghost"
             size="icon-xs"
-            onClick={onDuplicate}
+            onClick={() => duplicateSection(sectionId)}
             className="size-6 text-muted-foreground hover:text-primary hover:bg-primary/10"
             title="Duplicar sección"
           >
@@ -173,7 +177,7 @@ export function SectionCard({
             type="button"
             variant="ghost"
             size="icon-xs"
-            onClick={onRemove}
+            onClick={() => removeSection(sectionId)}
             className="size-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
             title="Eliminar sección"
           >
@@ -196,7 +200,7 @@ export function SectionCard({
       {!isCollapsed && (
         <CardContent className="p-3 sm:p-4">
           {EditorComponent ? (
-            <EditorComponent section={section} onUpdate={onUpdate} />
+            <EditorComponent section={section} onUpdate={(patch) => updateSection(sectionId, patch)} />
           ) : (
             <div className="p-3 text-xs text-destructive">
               Tipo de sección no reconocido: {section.tipo}
