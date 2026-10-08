@@ -1,16 +1,13 @@
+import { useCompilerStore } from '@/features/typst-compiler'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
-interface CompilerStatusBadgeProps {
-  isCompiling?: boolean
-  error?: string | null
-  typstVersion?: string | null
-}
 
-export function CompilerStatusBadge({
-  isCompiling = false,
-  error = null,
-  typstVersion,
-}: CompilerStatusBadgeProps) {
+export function CompilerStatusBadge() {
+
+  const isCompiling = useCompilerStore((state) => state.isCompiling)
+  const error = useCompilerStore((state) => state.error)
+  const typstVersion = useCompilerStore((state) => state.typstVersion)
+
   return (
     <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-surface-container-high/60 border border-border/50 text-[10px] font-mono select-none">
       {isCompiling ? (

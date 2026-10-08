@@ -1,20 +1,16 @@
 import { useCVStore } from '@/store'
-import { useTypstCompiler, type UseTypstCompilerReturn } from '@/features/typst-compiler'
+import { useTypstCompiler } from '@/features/typst-compiler'
 import { PreviewToolbar } from './preview-toolbar'
 import { PreviewCanvas } from './preview-canvas'
 import { usePreviewZoom } from '../hooks/use-preview-zoom'
 
 export interface CVPreviewProps {
   className?: string
-  compiler?: UseTypstCompilerReturn
 }
 
-interface CVPreviewContentProps {
-  className?: string
-  compiler: UseTypstCompilerReturn
-}
 
-function CVPreviewContent({ className = '', compiler }: CVPreviewContentProps) {
+export function CVPreview({ className = '' }: CVPreviewProps) {
+  const cvData = useCVStore((state) => state.cvData)
   const formatoPapel = useCVStore((state) => state.formatoPapel)
   const setPlantilla = useCVStore((state) => state.setPlantilla)
   const setFormatoPapel = useCVStore((state) => state.setFormatoPapel)
@@ -28,7 +24,7 @@ function CVPreviewContent({ className = '', compiler }: CVPreviewContentProps) {
     isDownloadingPDF,
     downloadPDF,
     recompile,
-  } = compiler
+  } = useTypstCompiler(cvData, plantilla, formatoPapel)
 
   const {
     zoom,
@@ -73,20 +69,4 @@ function CVPreviewContent({ className = '', compiler }: CVPreviewContentProps) {
   )
 }
 
-function CVPreviewInternal({ className }: { className?: string }) {
-  const cvData = useCVStore((state) => state.cvData)
-  const formatoPapel = useCVStore((state) => state.formatoPapel)
-  const plantilla = cvData.plantilla || 'harvard'
-  const compiler = useTypstCompiler(cvData, plantilla, formatoPapel)
-
-  return <CVPreviewContent className={className} compiler={compiler} />
-}
-
-export function CVPreview({ className = '', compiler }: CVPreviewProps) {
-  if (compiler) {
-    return <CVPreviewContent className={className} compiler={compiler} />
-  }
-
-  return <CVPreviewInternal className={className} />
-}
 

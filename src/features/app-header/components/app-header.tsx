@@ -13,18 +13,8 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-interface AppHeaderProps {
-  isCompiling?: boolean
-  error?: string | null
-  typstVersion?: string | null
-}
 
-export function AppHeader({
-  isCompiling,
-  error,
-  typstVersion,
-}: AppHeaderProps) {
-  const cvData = useCVStore((state) => state.cvData)
+export function AppHeader() {
   const resetToDefault = useCVStore((state) => state.resetToDefault)
   const clearData = useCVStore((state) => state.clearData)
 
@@ -43,6 +33,7 @@ export function AppHeader({
   }
 
   const handleExport = () => {
+    const cvData = useCVStore.getState().cvData
     exportDocumentJSON(cvData)
   }
 
@@ -67,11 +58,7 @@ export function AppHeader({
               </Badge>
             </div>
 
-            <CompilerStatusBadge
-              isCompiling={isCompiling}
-              error={error}
-              typstVersion={typstVersion}
-            />
+            <CompilerStatusBadge />
           </div>
 
           {/* Acciones principales del encabezado */}
