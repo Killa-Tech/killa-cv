@@ -10,7 +10,6 @@ export function App() {
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor')
   const isDesktop = useMediaQuery('(min-width: 1024px)')
   const showPreview = isDesktop || activeTab === 'preview'
-
   return (
     <ThemeProvider defaultTheme="dark" storageKey="killa-ui-theme">
       <div className="relative flex h-dvh flex-col overflow-hidden bg-background font-sans text-foreground">
@@ -43,12 +42,13 @@ export function App() {
           <div className="grid lg:grid-cols-12 gap-4 lg:gap-6 h-full min-h-0">
             <div className={`lg:col-span-5 xl:col-span-5 h-full min-h-0 overflow-y-auto pr-1 sm:pr-2 scrollbar-thin ${activeTab === 'editor' ? 'flex flex-col' : 'hidden lg:flex flex-col'
               }`}>
-              {showPreview && <CVEditor />}
+              <CVEditor />
             </div>
 
             <div className={`lg:col-span-7 xl:col-span-7 h-full min-h-0 ${activeTab === 'preview' ? 'flex flex-col' : 'hidden lg:flex flex-col'
               }`}>
-              <CVPreview />
+              {showPreview && <CVPreview />}
+
             </div>
           </div>
         </main>
