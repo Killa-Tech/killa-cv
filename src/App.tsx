@@ -4,9 +4,12 @@ import { CVEditor } from '@/features/cv-editor'
 import { CVPreview } from '@/features/cv-preview'
 import { Edit3, Eye } from 'lucide-react'
 import { useState } from 'react'
+import { useMediaQuery } from '@/core/hooks'
 
 export function App() {
   const [activeTab, setActiveTab] = useState<'editor' | 'preview'>('editor')
+  const isDesktop = useMediaQuery('(min-width: 1024px)')
+  const showPreview = isDesktop || activeTab === 'preview'
 
   return (
     <ThemeProvider defaultTheme="dark" storageKey="killa-ui-theme">
@@ -40,7 +43,7 @@ export function App() {
           <div className="grid lg:grid-cols-12 gap-4 lg:gap-6 h-full min-h-0">
             <div className={`lg:col-span-5 xl:col-span-5 h-full min-h-0 overflow-y-auto pr-1 sm:pr-2 scrollbar-thin ${activeTab === 'editor' ? 'flex flex-col' : 'hidden lg:flex flex-col'
               }`}>
-              <CVEditor />
+              {showPreview && <CVEditor />}
             </div>
 
             <div className={`lg:col-span-7 xl:col-span-7 h-full min-h-0 ${activeTab === 'preview' ? 'flex flex-col' : 'hidden lg:flex flex-col'
