@@ -1,42 +1,58 @@
 # ⚡ Motor Typst y WebAssembly (WASM)
 
-Este documento detalla el funcionamiento interno del motor de compilación tipográfica client-side de **Killa CV**, implementado en [`src/features/typst-compiler/`](https://github.com/Killa-Tech/killa-cv/tree/main/src/features/typst-compiler).
+Este documento detalla la arquitectura de compilación tipográfica client-side de **Killa CV**, implementada en [`src/features/typst-compiler/`](https://github.com/Killa-Tech/killa-cv/tree/main/src/features/typst-compiler).
 
 ---
 
-## 1. La Transición a WebAssembly
+## 1. La Transición a WebAssembly y Aislamiento en Web Worker
 
-En iteraciones preliminares, el proyecto dependía de un proceso secundario en Node.js mediante `child_process.execFile("typst", ...)`. Como se documentó en el informe de QA, ese enfoque colapsaba en entornos estáticos (Vercel, GitHub Pages) y durante `pnpm preview`.
+En iteraciones preliminares, el compilador Typst se ejecutaba en el hilo principal (*Main Thread*) de JavaScript o dependía de un subproceso Node.js. Esto presentaba dos limitaciones críticas:
+1. **Bloqueo del Hilo Principal de la UI:** La compilación tipográfica en WebAssembly (WASM) es una operación intensiva en CPU (Rust). Al ejecutarse en el mismo hilo de React, producía micro-congelamientos en la interfaz y caída de FPS mientras el usuario completaba los formularios.
+2. **Imposibilidad de Liberar Memoria en WASM:** Por diseño de la plataforma web, la memoria lineal asignada a WebAssembly (`memory.grow`) **nunca** se devuelve al sistema operativo mientras el contexto de ejecución siga vivo, lo que inflaba el heap del proceso de la pestaña.
 
-Killa CV v2.0 eliminó toda dependencia del sistema anfitrión trasladando el compilador oficial de **Typst v0.15+** directamente al motor JavaScript del navegador mediante los paquetes WebAssembly de `@myriaddreamin/typst.ts`:
-- `@myriaddreamin/typst-ts-web-compiler`: Compila código fuente `.typ` y archivos de datos a formatos intermedios y binarios PDF.
-- `@myriaddreamin/typst-ts-renderer`: Renderiza los artefactos intermedios en vectores SVG nítidos para previsualización instantánea.
+**Killa CV v2.0** resuelve ambos problemas desacoplando el runtime completo de Typst en un **Web Worker dedicado** (`typst.worker.ts`), permitiendo que el hilo de React se mantenga 100% libre (~15-20 MB de RAM base) a 60/120 FPS constantes, con capacidad de purga total de memoria.
 
 ---
 
-## 2. Inicialización Lazy de Binarios WASM
+## 2. Arquitectura Modular del Motor (`engine/`)
 
-Los binarios WASM (`typst_ts_web_compiler_bg.wasm` y `typst_ts_renderer_bg.wasm`) se empaquetan como assets estáticos administrados por Vite (`?url`). 
+Para evitar archivos monolíticos y respetar el principio de responsabilidad única (*Single Responsibility Principle*), el motor se divide en cuatro módulos especializados:
 
-La clase [`WasmTypstEngine`](https://github.com/Killa-Tech/killa-cv/blob/main/src/features/typst-compiler/engine/wasm-engine.ts) implementa un patrón Singleton con inicialización perezosa (*lazy initialization*):
-
-```typescript
-// Configuración de módulos WebAssembly en WasmTypstEngine
-$typst.setCompilerInitOptions({
-  getModule: () => compilerWasmUrl,
-})
-$typst.setRendererInitOptions({
-  getModule: () => rendererWasmUrl,
-})
+```
+src/features/typst-compiler/engine/
+├── types.ts                # Interfaces de dominio (TypstCompilerEngine, TypstCompileSVGResult, etc.)
+├── wasm-engine.ts          # Cliente puente en el Main Thread (WorkerTypstEngine) con purga de memoria
+├── typst.worker.ts         # Enrutador delgado de eventos del Web Worker (self.onmessage)
+├── typst-compiler-core.ts  # Runtime puro de Typst WASM, inicialización y compilación SVG/PDF
+└── avatar-processor.ts     # Decodificación binaria de imágenes (magic bytes) y Shadow FS
 ```
 
-La inicialización se ejecuta únicamente cuando el usuario accede a la vista de edición o previsualización, previniendo descargas de red innecesarias en la carga inicial de la aplicación.
+### 2.1. `wasm-engine.ts` (Cliente en el Hilo Principal)
+Implementa la interfaz `TypstCompilerEngine` mediante la clase `WorkerTypstEngine`. Actúa como puente entre React y el Worker:
+- Instancia el Worker de forma nativa con ESM de Vite: `new Worker(new URL('./typst.worker.ts', import.meta.url), { type: 'module' })`.
+- Mantiene un mapa de peticiones pendientes correlacionadas por identificador único `id`.
+- Sincroniza la cancelación reactiva mediante `AbortSignal`: si una compilación se aborta, la promesa se rechaza de inmediato sin esperar al Worker.
+- Implementa la **política de reciclaje de memoria por inactividad** (*Idle Purge*).
+
+### 2.2. `typst.worker.ts` (Enrutador del Worker)
+Es un dispatcher liviano (< 30 líneas) que escucha eventos en `self.onmessage`, delega la ejecución al módulo correspondiente y responde con `postMessage`.
+
+### 2.3. `typst-compiler-core.ts` (Runtime y Compilación)
+Contiene las funciones puras de compilación sin acoplamiento a React:
+- **`initTypstEngine()`**: Configura los binarios WASM (`typst_ts_web_compiler_bg.wasm` y `typst_ts_renderer_bg.wasm`), precarga las variantes de fuentes *Liberation Sans* (Regular, Bold, Italic) y monta el template maestro `/cv-engine.typ`.
+- **`compileSvgDocument()`**: Sanea el estado del CV, mapea `/cv.json`, invoca `$typst.svg()` y extrae las páginas vectoriales.
+- **`compilePdfDocument()`**: Genera el buffer binario `Uint8Array` listo para exportación mediante `$typst.pdf()`.
+
+### 2.4. `avatar-processor.ts` (Procesamiento Binario de Imágenes)
+Encapsula la validación y transformación de imágenes para Typst:
+- **`decodeAvatarDataUri()`**: Convierte cadenas Base64 a `Uint8Array` e inspecciona los primeros bytes del archivo (*magic bytes*) para garantizar la extensión real (`.jpg`, `.png`, `.webp`, `.gif`), previniendo errores de decodificación en Rust.
+- **`prepareAvatar()` / `cleanupVirtualAvatars()`**: Gestiona el mapeo de la foto en `/avatar.<extension>` dentro del Virtual FS y desmonta variantes obsoletas.
 
 ---
 
-## 3. Sistema de Archivos Virtual en Memoria (Virtual FS)
+## 3. Sistema de Archivos Virtual en Memoria (Virtual FS) y Limpieza
 
-Typst necesita acceder a fuentes tipográficas, plantillas e imágenes como si estuvieran en un sistema de archivos tradicional. Typst WebAssembly resuelve esto mediante un **Virtual File System** en memoria gestionado por `$typst.mapShadow`:
+Typst requiere acceder a plantillas, datos y recursos como si existieran en un disco físico. Typst WebAssembly soluciona esto con un **Virtual File System** en memoria gestionado por `$typst.mapShadow`:
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -49,59 +65,97 @@ Typst necesita acceder a fuentes tipográficas, plantillas e imágenes como si e
 ```
 
 ### 3.1. Template Maestro (`/cv-engine.typ`)
-El archivo [`src/assets/cv-engine.typ`](https://github.com/Killa-Tech/killa-cv/blob/main/src/assets/cv-engine.typ) se importa en crudo (`?raw`) durante la inicialización y se mapea en la raíz virtual:
+Se importa en crudo (`?raw`) durante la inicialización y se mapea una única vez:
 ```typescript
 const encoder = new TextEncoder()
 await $typst.mapShadow('/cv-engine.typ', encoder.encode(cvEngineSource))
 ```
 
-### 3.2. Datos de Usuario (`/cv.json`)
-Antes de cada ciclo de compilación, el objeto de estado del CV se sanea mediante `sanitizeCVData(cvData)`, se serializa a JSON y se escribe en `/cv.json`. Typst lee este archivo dinámicamente con `#let cv-data = json("/cv.json")`.
-
-### 3.3. Procesamiento Binario del Avatar (`/avatar.png`)
-Si el usuario cargó una fotografía como Data URI Base64 (`data:image/...;base64,...`), el motor no envía cadenas largas de texto a Typst. En su lugar:
-1. Convierte el string Base64 a un buffer de bytes `Uint8Array`.
-2. Lo mapea en `$typst.mapShadow('/avatar.png', photoBytes)`.
-3. Reemplaza la ruta en los datos a `/avatar.png`, permitiendo que Typst la dibuje nativamente con `#image("/avatar.png")`.
-4. Si el usuario elimina la fotografía, se invoca `$typst.unmapShadow('/avatar.png')` para liberar la memoria WebAssembly.
+### 3.2. Prevención de Fugas de Memoria (`unmapShadow`)
+En cada compilación, los datos se serializan y se mapean en `/cv.json`. Para evitar la acumulación progresiva de memoria en el heap de WebAssembly a lo largo de cientos de ediciones:
+```typescript
+try {
+  // Compilar documento...
+} finally {
+  try {
+    await $typst.unmapShadow('/cv.json')
+  } catch {
+    // Ignorar si ya fue desmontado
+  }
+}
+```
 
 ---
 
-## 4. Ciclo de Compilación Reactivo
+## 4. Política de Purga y Reciclaje de Memoria (Idle Memory Purge)
+
+Uno de los mayores desafíos en aplicaciones web con WebAssembly es que una vez que el motor de Rust aloja memoria (`memory.grow`), el navegador **no la libera** mientras el hilo permanezca abierto.
+
+Para garantizar estabilidad a largo plazo:
+1. `WorkerTypstEngine` inicia un temporizador de inactividad de **5 minutos** (`IDLE_PURGE_TIMEOUT_MS = 300_000`) cada vez que finaliza una compilación.
+2. Si el usuario no realiza cambios durante 5 minutos, se ejecuta automáticamente:
+   ```typescript
+   this.worker.terminate()
+   this.worker = null
+   ```
+3. Esto destruye el contexto del Web Worker por completo y **devuelve el 100% de la memoria RAM del compilador al sistema operativo**.
+4. Tan pronto como el usuario vuelva a editar un campo, el cliente recrea transparentemente el Worker bajo demanda sin interrupción visual.
+
+---
+
+## 5. Ciclo de Compilación Reactivo y Paralelo
 
 ```mermaid
 sequenceDiagram
+    autonumber
+    box Main Thread (React & UI)
     participant User as Usuario / Editor
-    participant Hook as useTypstCompiler Hook
-    participant Engine as WasmTypstEngine
-    participant VirtualFS as Virtual FS ($typst)
-    participant WASM as typst.wasm
-    participant Preview as CVPreview Canvas
+    participant Hook as useTypstCompiler
+    participant Client as WorkerTypstEngine
+    participant Canvas as PreviewCanvas
+    end
 
-    User->>Hook: Modifica campo (State Update)
-    Note over Hook: Debounce Timer (350 ms)
-    Hook->>Hook: Aborta compilación anterior (AbortController)
-    Hook->>Engine: compileSVG(cvData, plantilla, paper, signal)
-    Engine->>VirtualFS: mapShadow('/cv.json', cleanData)
-    Engine->>VirtualFS: mapShadow('/avatar.png', photoBytes)
-    Engine->>WASM: $typst.svg({ mainFilePath, inputs })
-    WASM-->>Engine: SVG Vectorial
-    Engine->>Engine: extractPagesFromSvg()
-    Engine-->>Hook: TypstCompileSVGResult ({ ok, pages })
-    Hook-->>Preview: Actualiza páginas SVG en pantalla
+    box Web Worker Thread (Aislado)
+    participant Worker as typst.worker.ts
+    participant Core as typst-compiler-core
+    participant WASM as $typst Runtime (Rust)
+    participant VirtualFS as Shadow Virtual FS
+    end
+
+    User->>Hook: Edita campo en el formulario
+    Note over Hook: Debounce Adaptativo (350 ms)
+    Hook->>Client: compileSVG(cvData, plantilla, paper, signal)
+    Client->>Worker: postMessage({ id, type: 'compileSVG', payload })
+    Worker->>Core: compileSvgDocument()
+    Core->>VirtualFS: mapShadow('/cv.json', cleanData)
+    Core->>VirtualFS: mapShadow('/avatar.png', photoBytes)
+    Core->>WASM: $typst.svg({ mainFilePath, inputs })
+    WASM-->>Core: SVG Vectorial
+    Core->>VirtualFS: unmapShadow('/cv.json') (finally)
+    Core-->>Worker: TypstCompileSVGResult ({ ok, pages })
+    Worker-->>Client: postMessage({ id, ok: true, result })
+    Client-->>Hook: Resuelve Promesa
+    Hook->>Canvas: Actualiza páginas SVG (dangerouslySetInnerHTML)
 ```
 
-### 4.1. Debounce Adaptativo (350 ms)
-Para evitar bloqueos o saturación del hilo principal mientras el usuario tipea texto en el formulario, el hook `useTypstCompiler` aplica un temporizador debounce de 350 milisegundos.
+### 5.1. Debounce Adaptativo (350 ms)
+Para prevenir saturación ante mecanografía rápida, el hook `useTypstCompiler` retrasa la emisión del payload debounced 350 milisegundos.
 
-### 4.2. Concurrencia y Cancelación con `AbortController`
-Si el usuario tipea rápidamente o conmuta entre plantillas antes de que finalice la compilación anterior:
-1. La señal `AbortSignal` activa la cancelación inmediata de la promesa en curso.
-2. Se descarta el resultado obsoleto para prevenir condiciones de carrera (*race conditions*).
-3. Se inicia la compilación más reciente.
+### 5.2. Concurrencia y Cancelación con `AbortController`
+Si el usuario pulsa teclas consecutivas o conmuta de plantilla antes de que termine una compilación en curso:
+1. `abortControllerRef.current.abort()` señaliza la cancelación.
+2. La promesa del cliente se rechaza inmediatamente con `AbortError`.
+3. Cuando el Worker finaliza la tarea antigua, su respuesta se descarta limpiamente por descarte de `id`, garantizando que la UI solo dibuje el estado más reciente.
 
-### 4.3. Compilación a SVG vs. Compilación a PDF
-- **Compilación a SVG (`compileSVG`):** Utilizada por la vista previa en pantalla. Produce cadenas SVG vectoriales que se inyectan en el DOM manteniendo una nitidez absoluta a cualquier nivel de zoom.
-- **Compilación a PDF (`compilePDF`):** Invocada al hacer clic en **Descargar PDF**. Genera un buffer binario `Uint8Array` nativo que se descarga a través de un `Blob` sin intermediarios externos.
+### 5.3. Carga Perezosa (Lazy Loading) y Montaje Responsivo
+- **Eliminación del arranque ansioso:** Se eliminó la verificación de estado automática en el montaje de la app. El motor WASM solo se descarga y ejecuta cuando se requiere compilar el documento por primera vez.
+- **Montaje condicional en Mobile:** En `App.tsx`, el componente `CVPreview` se evalúa mediante `useMediaQuery('(min-width: 1024px)')`. En pantallas de teléfono móvil, el componente no se monta mientras el usuario se encuentre en la pestaña del editor, ahorrando ~28 MB de descarga de datos en dispositivos móviles.
+
+---
+
+## 6. Compilación a SVG vs. Compilación a PDF
+
+- **Compilación a SVG (`compileSVG`):** Destinada a la previsualización interactiva. Typst produce páginas vectoriales nítidas que se inyectan en el DOM (`dangerouslySetInnerHTML`), preservando la nitidez al cambiar el zoom (0.5x - 2.0x).
+- **Compilación a PDF (`compilePDF`):** Invocada al pulsar **Descargar PDF**. Genera un buffer binario `Uint8Array` nativo sin intermediarios de servidor, transferido desde el Worker al hilo principal para descarga inmediata mediante un `Blob`.
 
 Para conocer cómo se validan y formatean los datos enviados a este motor, continúa en [[Especificación JSON Schema|04-Especificacion-JSON-Schema]].

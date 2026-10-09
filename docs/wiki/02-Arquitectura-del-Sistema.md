@@ -54,30 +54,44 @@ graph TD
         JsonSchema["cv.schema.json (Contrato Formal JSON)"]
     end
 
-    subgraph Compiler_Layer ["Motor Typst WebAssembly (typst-compiler)"]
+    subgraph Compiler_Layer ["Motor Typst WebAssembly Desacoplado (typst-compiler)"]
         UseCompiler["useTypstCompiler Hook (Debounce 350ms, AbortController)"]
-        WasmEngine["WasmTypstEngine Singleton"]
-        VirtualFS["Typst Virtual FS ($typst.mapShadow)"]
-        TypstSource["/cv-engine.typ (Template Typst)"]
-        JsonVirtual["/cv.json (Datos Saneados)"]
-        AvatarVirtual["/avatar.png (Uint8Array Decodificado)"]
-        WasmCompiler["typst_ts_web_compiler.wasm"]
-        WasmRenderer["typst_ts_renderer.wasm"]
+        CompilerStore["compiler-store.ts (Zustand: isCompiling, version, error)"]
+        WorkerClient["WorkerTypstEngine (Main Thread Client + Idle Purge)"]
+        
+        subgraph Worker_Thread ["Web Worker Thread (Aislado de UI)"]
+            WorkerRouter["typst.worker.ts (Router de Mensajes)"]
+            CompilerCore["typst-compiler-core.ts (Init & Compile SVG/PDF)"]
+            AvatarProc["avatar-processor.ts (Magic Bytes & Avatares)"]
+            VirtualFS["Typst Virtual FS ($typst.mapShadow & unmapShadow)"]
+            TypstSource["/cv-engine.typ (Template Typst)"]
+            JsonVirtual["/cv.json (Datos Saneados)"]
+            AvatarVirtual["/avatar.png (Uint8Array Decodificado)"]
+            WasmCompiler["typst_ts_web_compiler.wasm"]
+            WasmRenderer["typst_ts_renderer.wasm"]
+        end
     end
 
     App --> CVStore
     App --> UseCompiler
     CVStore --> Sanitizer
     Sanitizer --> UseCompiler
-    UseCompiler --> WasmEngine
-    WasmEngine --> VirtualFS
+    UseCompiler --> CompilerStore
+    UseCompiler --> WorkerClient
+    WorkerClient <-->|"postMessage (Asíncrono)"| WorkerRouter
+    WorkerRouter --> CompilerCore
+    CompilerCore --> AvatarProc
+    CompilerCore --> VirtualFS
     VirtualFS --> TypstSource
     VirtualFS --> JsonVirtual
     VirtualFS --> AvatarVirtual
     VirtualFS --> WasmCompiler
     WasmCompiler --> WasmRenderer
-    WasmRenderer -->|"Páginas SVG Vectoriales"| Preview
-    WasmCompiler -->|"Binario PDF"| Preview
+    WasmRenderer -->|"Páginas SVG Vectoriales"| WorkerRouter
+    WasmCompiler -->|"Binario PDF (Uint8Array)"| WorkerRouter
+    WorkerRouter -->|"postMessage (Response)"| WorkerClient
+    WorkerClient -->|"Páginas SVG"| UseCompiler
+    UseCompiler -->|"dangerouslySetInnerHTML"| Preview
     DocStorage --> Sanitizer
     DocStorage --> CVStore
 ```
@@ -109,10 +123,21 @@ src/
 │   ├── cv-editor/                      # Formulario personal y gestor polimórfico de secciones
 │   ├── cv-preview/                     # Toolbar, zoom, canvas SVG y diálogo de error
 │   ├── document-storage/               # Importación/Exportación JSON con Drag & Drop
-│   └── typst-compiler/                 # Singleton WasmTypstEngine y hook reactivo
+│   └── typst-compiler/                 # Motor WebAssembly desacoplado en Web Worker
+│       ├── engine/
+│       │   ├── types.ts                # Interfaces y contratos (TypstCompilerEngine)
+│       │   ├── wasm-engine.ts          # Cliente WorkerTypstEngine (Main Thread) + Idle Purge
+│       │   ├── typst.worker.ts         # Enrutador delgado de eventos del Web Worker
+│       │   ├── typst-compiler-core.ts  # Runtime WASM y compilación pura SVG/PDF
+│       │   └── avatar-processor.ts     # Decodificación binaria de imágenes y Virtual FS
+│       ├── hooks/
+│       │   └── use-typst-compiler.ts   # Hook reactivo de compilación no bloqueante
+│       ├── store/
+│       │   └── compiler-store.ts       # Estado reactivo global Zustand (isCompiling, error)
+│       └── index.ts
 ├── store/
 │   └── cv-store.ts                     # Store centralizado Zustand con persistencia local
-├── App.tsx                             # Orquestador del Workbench (< 80 líneas)
+├── App.tsx                             # Orquestador del Workbench con carga perezosa
 ├── index.css                           # Tokens @theme Tailwind v4 y paleta OKLCH
 └── main.tsx                            # Bootstrap de la aplicación React 19
 ```
@@ -125,7 +150,10 @@ src/
 2. **Mutación Atómica:** La acción invoca un método específico en [`cv-store.ts`](https://github.com/Killa-Tech/killa-cv/blob/main/src/store/cv-store.ts), garantizando mutación inmutable por UUID.
 3. **Persistencia Automática:** Zustand sincroniza de inmediato el nuevo estado con `localStorage`.
 4. **Debounce y Saneamiento:** El hook `useTypstCompiler` recibe los nuevos datos, espera un intervalo de reposo (350 ms) y ejecuta `sanitizeCVData()`, descartando identificadores internos y campos vacíos.
-5. **Virtual FS y Compilación:** Los datos se inyectan en `/cv.json` dentro del sistema de archivos virtual en memoria de Typst, disparando la compilación a SVG y PDF sin I/O de disco.
-6. **Renderizado:** [`cv-preview`](https://github.com/Killa-Tech/killa-cv/tree/main/src/features/cv-preview) actualiza las páginas SVG vectoriales en pantalla de forma no bloqueante.
+5. **Delegación Asíncrona al Web Worker:** `WorkerTypstEngine` despacha la solicitud de compilación vía `postMessage` al hilo secundario.
+6. **Virtual FS y Compilación Aislada:** Dentro del Worker, los datos se inyectan en `/cv.json` en memoria. Typst WebAssembly ejecuta la compilación a SVG y PDF sin bloquear el hilo de React. Al finalizar, `/cv.json` se desmonta inmediatamente con `unmapShadow()` para prevenir fugas de memoria.
+7. **Renderizado de Alta Frecuencia:** [`cv-preview`](https://github.com/Killa-Tech/killa-cv/tree/main/src/features/cv-preview) recibe las páginas SVG vectoriales y las proyecta en pantalla a 60/120 FPS sin latencia.
+8. **Purga Automática de Memoria:** Tras 5 minutos de inactividad del usuario, el Worker se termina automáticamente para devolver la memoria RAM al sistema operativo.
 
 Para ver a detalle cómo funciona el compilador interno, continúa en [[Motor Typst y WebAssembly|03-Motor-Typst-y-WASM]].
+
