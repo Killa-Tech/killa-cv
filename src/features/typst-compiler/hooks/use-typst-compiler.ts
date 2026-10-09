@@ -37,9 +37,6 @@ export function useTypstCompiler(
   const isCompiling = useCompilerStore((state) => state.isCompiling)
   const error = useCompilerStore((state) => state.error)
   const typstVersion = useCompilerStore((state) => state.typstVersion)
-  const setIsCompiling = useCompilerStore((state) => state.setIsCompiling)
-  const setError = useCompilerStore((state) => state.setError)
-  const setTypstVersion = useCompilerStore((state) => state.setTypstVersion)
 
   // Disparador manual para recompilar
   const [recompileTrigger, setRecompileTrigger] = useState<number>(0)
@@ -56,9 +53,9 @@ export function useTypstCompiler(
     wasmTypstEngine.checkStatus().then((status) => {
       if (!isMounted) return
       if (status.ok && status.version) {
-        setTypstVersion(status.version)
+        useCompilerStore.getInitialState().setTypstVersion(status.version)
       } else if (!status.ok && status.error) {
-        setError(`Error al iniciar motor Typst: ${status.error}`)
+        useCompilerStore.getState().setError(`Error al iniciar motor Typst: ${status.error}`)
       }
     })
 
@@ -82,7 +79,7 @@ export function useTypstCompiler(
     abortControllerRef.current = controller
 
     const executeCompilation = async () => {
-      setIsCompiling(true)
+      useCompilerStore.getState().setIsCompiling(true)
 
       try {
         const result = await wasmTypstEngine.compileSVG(
@@ -97,18 +94,18 @@ export function useTypstCompiler(
         if (result.ok) {
           setPages(result.pages)
           setTotalPages(result.totalPages)
-          setError(null)
+          useCompilerStore.getState().setError(null)
         } else {
-          setError(result.error || 'Error desconocido al compilar documento.')
+          useCompilerStore.getState().setError(result.error || 'Error desconocido al compilar documento.')
         }
       } catch (err: unknown) {
         if ((err as Error)?.name === 'AbortError' || controller.signal.aborted || !isCurrent) {
           return
         }
-        setError(err instanceof Error ? err.message : String(err))
+        useCompilerStore.getState().setError(err instanceof Error ? err.message : String(err))
       } finally {
         if (isCurrent && !controller.signal.aborted) {
-          setIsCompiling(false)
+          useCompilerStore.getState().setIsCompiling(false)
         }
       }
     }
@@ -142,7 +139,7 @@ export function useTypstCompiler(
         downloadBlob(blob, filename)
       } catch (err) {
         console.error('Error al exportar documento PDF:', err)
-        setError(err instanceof Error ? err.message : 'Error al exportar PDF')
+        useCompilerStore.getState().setError(err instanceof Error ? err.message : 'Error al exportar PDF')
       } finally {
         setIsDownloadingPDF(false)
       }
