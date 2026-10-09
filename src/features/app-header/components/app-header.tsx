@@ -54,7 +54,7 @@ export function AppHeader() {
                 variant="outline"
                 className="border-primary/40 text-primary font-mono text-[9px] uppercase tracking-wider"
               >
-                v2.0
+                v2.2
               </Badge>
             </div>
 
