@@ -1,9 +1,9 @@
-import * as React from 'react'
 import { Badge } from '@/core/ui/badge'
 import { Button } from '@/core/ui/button'
 import { Input } from '@/core/ui/input'
 import type { GrupoItem } from '@/domain/cv'
 import { Plus, Trash2, X } from 'lucide-react'
+import { useState, type KeyboardEvent } from 'react'
 
 interface GroupCardProps {
   group: GrupoItem
@@ -12,7 +12,7 @@ interface GroupCardProps {
 }
 
 export function GroupCard({ group, onUpdate, onRemove }: GroupCardProps) {
-  const [tagInput, setTagInput] = React.useState<string>('')
+  const [tagInput, setTagInput] = useState<string>('')
 
   const handleAddTag = () => {
     const trimmed = tagInput.trim()
@@ -30,7 +30,7 @@ export function GroupCard({ group, onUpdate, onRemove }: GroupCardProps) {
     setTagInput('')
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault()
       handleAddTag()

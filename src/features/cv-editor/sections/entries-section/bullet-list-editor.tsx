@@ -1,7 +1,7 @@
-import * as React from 'react'
 import { Button } from '@/core/ui/button'
 import { Input } from '@/core/ui/input'
 import { Plus, Trash2 } from 'lucide-react'
+import type { KeyboardEvent } from 'react'
 
 interface BulletListEditorProps {
   bullets: string[]
@@ -31,7 +31,7 @@ export function BulletListEditor({ bullets, onChange }: BulletListEditorProps) {
   }
 
   const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
+    e: KeyboardEvent<HTMLInputElement>,
     index: number
   ) => {
     if (e.key === 'Enter') {

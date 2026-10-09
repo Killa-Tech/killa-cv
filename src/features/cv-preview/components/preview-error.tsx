@@ -14,7 +14,7 @@ export function PreviewError({ error }: PreviewErrorProps) {
           <CardTitle className="text-xs font-mono font-bold tracking-tight text-destructive">
             Error de Compilación Typst:
           </CardTitle>
-          <CardDescription className="text-xs text-destructive/90 font-mono whitespace-pre-wrap break-words leading-relaxed">
+          <CardDescription className="text-xs text-destructive/90 font-mono whitespace-pre-wrap wrap-break-word leading-relaxed">
             {error}
           </CardDescription>
         </div>

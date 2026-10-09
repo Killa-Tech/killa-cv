@@ -1,4 +1,3 @@
-import * as React from 'react'
 import { Badge } from '@/core/ui/badge'
 import { Button } from '@/core/ui/button'
 import { useCVStore } from '@/store'
@@ -12,23 +11,14 @@ import {
   Trash2,
   MoonStar,
 } from 'lucide-react'
+import { useState } from 'react'
 
-interface AppHeaderProps {
-  isCompiling?: boolean
-  error?: string | null
-  typstVersion?: string | null
-}
 
-export function AppHeader({
-  isCompiling,
-  error,
-  typstVersion,
-}: AppHeaderProps) {
-  const cvData = useCVStore((state) => state.cvData)
+export function AppHeader() {
   const resetToDefault = useCVStore((state) => state.resetToDefault)
   const clearData = useCVStore((state) => state.clearData)
 
-  const [isImportOpen, setIsImportOpen] = React.useState<boolean>(false)
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const handleReset = () => {
     if (window.confirm('¿Deseas restablecer el CV con el perfil de ejemplo (John Doe)?')) {
@@ -43,6 +33,7 @@ export function AppHeader({
   }
 
   const handleExport = () => {
+    const cvData = useCVStore.getState().cvData
     exportDocumentJSON(cvData)
   }
 
@@ -63,15 +54,11 @@ export function AppHeader({
                 variant="outline"
                 className="border-primary/40 text-primary font-mono text-[9px] uppercase tracking-wider"
               >
-                v2.0
+                v2.2
               </Badge>
             </div>
 
-            <CompilerStatusBadge
-              isCompiling={isCompiling}
-              error={error}
-              typstVersion={typstVersion}
-            />
+            <CompilerStatusBadge />
           </div>
 
           {/* Acciones principales del encabezado */}

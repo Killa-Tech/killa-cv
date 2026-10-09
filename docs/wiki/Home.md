@@ -23,7 +23,7 @@ Esta wiki está organizada en módulos autodirigidos tanto para **usuarios final
 | :--- | :--- |
 | [[Guía de Inicio Rápido\|01-Inicio-Rapido]] | Guía para usuarios (edición, importación/exportación JSON, descarga PDF) y desarrolladores (clonación, entorno local y scripts). |
 | [[Arquitectura del Sistema\|02-Arquitectura-del-Sistema]] | DDD, Vertical Slices, Zustand Store, inmutabilidad por UUID y flujo de datos integral. |
-| [[Motor Typst y WebAssembly\|03-Motor-Typst-y-WASM]] | Funcionamiento de `@myriaddreamin/typst.ts`, Virtual FS en memoria (`$typst.mapShadow`), debounce reactivo y cancelación con `AbortController`. |
+| [[Motor Typst y WebAssembly\|03-Motor-Typst-y-WASM]] | Arquitectura aislada en Web Worker, Virtual FS en memoria con limpieza automática, reciclaje de RAM (Idle Purge) y debounce con `AbortController`. |
 | [[Especificación JSON Schema\|04-Especificacion-JSON-Schema]] | Contrato formal `cv.schema.json`, las 4 secciones polimórficas (texto, entradas, agrupadas, listas) y proceso de saneamiento. |
 | [[Guía de Plantillas Typst\|05-Guia-de-Plantillas]] | Comparativa Harvard vs. Modern, tipografías asociadas y guía paso a paso para diseñar nuevas plantillas. |
 | [[Diseño Cyber Lunar y UI\|06-Sistema-de-Diseno-Cyber-Lunar]] | Paleta OKLCH, tokens semánticos en Tailwind v4, tipografías y catálogo de primitivas UI. |

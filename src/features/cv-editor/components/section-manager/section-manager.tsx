@@ -1,20 +1,20 @@
-import * as React from 'react'
 import { Button } from '@/core/ui/button'
 import { useCVStore } from '@/store'
 import { SectionCard } from './section-card'
 import { AddSectionDialog } from './add-section-dialog'
 import { Plus, FoldVertical, UnfoldVertical, Layers } from 'lucide-react'
+import { useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 
 export function SectionManager() {
-  const secciones = useCVStore((state) => state.cvData.secciones)
+  const sectionIds = useCVStore(
+    useShallow((state) => state.cvData.secciones.map((sec) => sec.id))
+  )
   const addSection = useCVStore((state) => state.addSection)
-  const updateSection = useCVStore((state) => state.updateSection)
-  const removeSection = useCVStore((state) => state.removeSection)
-  const duplicateSection = useCVStore((state) => state.duplicateSection)
   const reorderSections = useCVStore((state) => state.reorderSections)
 
-  const [isAddOpen, setIsAddOpen] = React.useState<boolean>(false)
-  const [collapsedMap, setCollapsedMap] = React.useState<Record<string, boolean>>({})
+  const [isAddOpen, setIsAddOpen] = useState<boolean>(false)
+  const [collapsedMap, setCollapsedMap] = useState<Record<string, boolean>>({})
 
   const toggleCollapse = (id: string) => {
     setCollapsedMap((prev) => ({
@@ -25,8 +25,8 @@ export function SectionManager() {
 
   const collapseAll = () => {
     const next: Record<string, boolean> = {}
-    secciones.forEach((s) => {
-      next[s.id] = true
+    sectionIds.forEach((id) => {
+      next[id] = true
     })
     setCollapsedMap(next)
   }
@@ -45,7 +45,7 @@ export function SectionManager() {
           </div>
           <div>
             <h2 className="text-xs font-heading font-bold uppercase tracking-wider text-foreground">
-              Secciones del CV ({secciones.length})
+              Secciones del CV ({sectionIds.length})
             </h2>
             <span className="text-[10px] text-muted-foreground font-mono">
               El orden aquí define la disposición tipográfica en Typst
@@ -54,7 +54,7 @@ export function SectionManager() {
         </div>
 
         <div className="flex items-center gap-1.5">
-          {secciones.length > 0 && (
+          {sectionIds.length > 0 && (
             <>
               <Button
                 type="button"
@@ -96,7 +96,7 @@ export function SectionManager() {
       </div>
 
       {/* Lista de Secciones */}
-      {secciones.length === 0 ? (
+      {sectionIds.length === 0 ? (
         <div className="p-8 text-center rounded-xl border border-dashed border-border/70 bg-surface-container-low/20 space-y-3">
           <p className="text-xs text-muted-foreground">
             No hay secciones en el documento. Añade tu experiencia, educación o habilidades para comenzar.
@@ -114,18 +114,15 @@ export function SectionManager() {
         </div>
       ) : (
         <div className="space-y-3">
-          {secciones.map((section, index) => (
+          {sectionIds.map((id, index) => (
             <SectionCard
-              key={section.id}
-              section={section}
+              key={id}
+              sectionId={id}
               index={index}
               isFirst={index === 0}
-              isLast={index === secciones.length - 1}
-              isCollapsed={Boolean(collapsedMap[section.id])}
-              onToggleCollapse={() => toggleCollapse(section.id)}
-              onUpdate={(patch) => updateSection(section.id, patch)}
-              onRemove={() => removeSection(section.id)}
-              onDuplicate={() => duplicateSection(section.id)}
+              isLast={index === sectionIds.length - 1}
+              isCollapsed={Boolean(collapsedMap[id])}
+              onToggleCollapse={() => toggleCollapse(id)}
               onMoveUp={() => reorderSections(index, index - 1)}
               onMoveDown={() => reorderSections(index, index + 1)}
             />

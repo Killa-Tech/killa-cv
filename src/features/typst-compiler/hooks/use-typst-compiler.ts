@@ -1,8 +1,9 @@
-import * as React from 'react'
 import { useDebounce } from '@/core/hooks/use-debounce'
 import { downloadBlob } from '@/core/lib/download'
 import type { CVData, FormatoPapel, PlantillaTipo } from '@/domain/cv'
 import { wasmTypstEngine } from '../engine/wasm-engine'
+import { useCompilerStore } from '../store/compiler-store'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 export interface UseTypstCompilerOptions {
   debounceMs?: number
@@ -27,44 +28,31 @@ export function useTypstCompiler(
 ): UseTypstCompilerReturn {
   const { debounceMs = 350 } = options
 
-  const [pages, setPages] = React.useState<string[]>([])
-  const [totalPages, setTotalPages] = React.useState<number>(0)
-  const [isCompiling, setIsCompiling] = React.useState<boolean>(false)
-  const [error, setError] = React.useState<string | null>(null)
-  const [typstVersion, setTypstVersion] = React.useState<string | null>(null)
-  const [isDownloadingPDF, setIsDownloadingPDF] = React.useState<boolean>(false)
+  const [pages, setPages] = useState<string[]>([])
+  const [totalPages, setTotalPages] = useState<number>(0)
+  const [isDownloadingPDF, setIsDownloadingPDF] = useState<boolean>(false)
+
+
+  // Estado global de compilador sincronizado via Zustand
+  const isCompiling = useCompilerStore((state) => state.isCompiling)
+  const error = useCompilerStore((state) => state.error)
+  const typstVersion = useCompilerStore((state) => state.typstVersion)
 
   // Disparador manual para recompilar
-  const [recompileTrigger, setRecompileTrigger] = React.useState<number>(0)
+  const [recompileTrigger, setRecompileTrigger] = useState<number>(0)
 
   // Aplicar debounce sobre los datos reactivos del CV
   const debouncedCVData = useDebounce(cvData, debounceMs)
   const debouncedPlantilla = useDebounce(plantilla, debounceMs)
   const debouncedPaper = useDebounce(paper, debounceMs)
 
-  // Verificar estado del motor Typst WASM al montar
-  React.useEffect(() => {
-    let isMounted = true
 
-    wasmTypstEngine.checkStatus().then((status) => {
-      if (!isMounted) return
-      if (status.ok && status.version) {
-        setTypstVersion(status.version)
-      } else if (!status.ok && status.error) {
-        setError(`Error al iniciar motor Typst: ${status.error}`)
-      }
-    })
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
 
   // Referencia al AbortController activo para cancelar compilaciones previas
-  const abortControllerRef = React.useRef<AbortController | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // Efecto asíncrono puro que sincroniza la compilación ante cambios debounced o forzados
-  React.useEffect(() => {
+  useEffect(() => {
     let isCurrent = true
 
     if (abortControllerRef.current) {
@@ -75,7 +63,7 @@ export function useTypstCompiler(
     abortControllerRef.current = controller
 
     const executeCompilation = async () => {
-      setIsCompiling(true)
+      useCompilerStore.getState().setIsCompiling(true)
 
       try {
         const result = await wasmTypstEngine.compileSVG(
@@ -90,18 +78,19 @@ export function useTypstCompiler(
         if (result.ok) {
           setPages(result.pages)
           setTotalPages(result.totalPages)
-          setError(null)
+          useCompilerStore.getState().setError(null)
+          useCompilerStore.getState().setTypstVersion('Typst WASM 0.15')
         } else {
-          setError(result.error || 'Error desconocido al compilar documento.')
+          useCompilerStore.getState().setError(result.error || 'Error desconocido al compilar documento.')
         }
       } catch (err: unknown) {
         if ((err as Error)?.name === 'AbortError' || controller.signal.aborted || !isCurrent) {
           return
         }
-        setError(err instanceof Error ? err.message : String(err))
+        useCompilerStore.getState().setError(err instanceof Error ? err.message : String(err))
       } finally {
         if (isCurrent && !controller.signal.aborted) {
-          setIsCompiling(false)
+          useCompilerStore.getState().setIsCompiling(false)
         }
       }
     }
@@ -117,12 +106,12 @@ export function useTypstCompiler(
   }, [debouncedCVData, debouncedPlantilla, debouncedPaper, recompileTrigger])
 
   // Función para forzar re-compilación inmediata
-  const recompile = React.useCallback(async () => {
+  const recompile = useCallback(async () => {
     setRecompileTrigger((prev) => prev + 1)
   }, [])
 
   // Función para descargar PDF
-  const downloadPDF = React.useCallback(
+  const downloadPDF = useCallback(
     async (customFilename?: string) => {
       setIsDownloadingPDF(true)
       try {
@@ -135,7 +124,7 @@ export function useTypstCompiler(
         downloadBlob(blob, filename)
       } catch (err) {
         console.error('Error al exportar documento PDF:', err)
-        setError(err instanceof Error ? err.message : 'Error al exportar PDF')
+        useCompilerStore.getState().setError(err instanceof Error ? err.message : 'Error al exportar PDF')
       } finally {
         setIsDownloadingPDF(false)
       }
