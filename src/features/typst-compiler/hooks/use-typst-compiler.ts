@@ -53,7 +53,7 @@ export function useTypstCompiler(
     wasmTypstEngine.checkStatus().then((status) => {
       if (!isMounted) return
       if (status.ok && status.version) {
-        useCompilerStore.getInitialState().setTypstVersion(status.version)
+        useCompilerStore.getState().setTypstVersion(status.version)
       } else if (!status.ok && status.error) {
         useCompilerStore.getState().setError(`Error al iniciar motor Typst: ${status.error}`)
       }

@@ -227,6 +227,15 @@ class WasmTypstEngine implements TypstCompilerEngine {
         totalPages: 0,
         error: err instanceof Error ? err.message : String(err),
       }
+    } finally {
+      // Limpiar archivo virtual de Shadow FS solo si esta compilacion no fue abortada
+      if (!signal?.aborted) {
+        try {
+          await $typst.unmapShadow('/cv.json')
+        } catch {
+          // Ignorar si ya fue desmontado o no existia
+        }
+      }
     }
   }
 
@@ -245,21 +254,28 @@ class WasmTypstEngine implements TypstCompilerEngine {
 
     const jsonStr = JSON.stringify(cleanData)
     await $typst.mapShadow('/cv.json', encoder.encode(jsonStr))
+    try {
+      const pdfBytes = await $typst.pdf({
+        mainFilePath: '/cv-engine.typ',
+        inputs: {
+          data: '/cv.json',
+          plantilla,
+          paper,
+        },
+      })
 
-    const pdfBytes = await $typst.pdf({
-      mainFilePath: '/cv-engine.typ',
-      inputs: {
-        data: '/cv.json',
-        plantilla,
-        paper,
-      },
-    })
-
-    if (!pdfBytes) {
-      throw new Error('El compilador no generó bytes de PDF.')
+      if (!pdfBytes) {
+        throw new Error('El compilador no generó bytes de PDF.')
+      }
+      return pdfBytes
+    } finally {
+      try {
+        await $typst.unmapShadow('/cv.json')
+      } catch {
+        //ignorar si ya fue desmontado
+      }
     }
 
-    return pdfBytes
   }
 
   private extractPagesFromSvg(svgString: string): string[] {
