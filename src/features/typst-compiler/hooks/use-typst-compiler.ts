@@ -46,23 +46,7 @@ export function useTypstCompiler(
   const debouncedPlantilla = useDebounce(plantilla, debounceMs)
   const debouncedPaper = useDebounce(paper, debounceMs)
 
-  // Verificar estado del motor Typst WASM al montar
-  useEffect(() => {
-    let isMounted = true
 
-    wasmTypstEngine.checkStatus().then((status) => {
-      if (!isMounted) return
-      if (status.ok && status.version) {
-        useCompilerStore.getState().setTypstVersion(status.version)
-      } else if (!status.ok && status.error) {
-        useCompilerStore.getState().setError(`Error al iniciar motor Typst: ${status.error}`)
-      }
-    })
-
-    return () => {
-      isMounted = false
-    }
-  }, [])
 
   // Referencia al AbortController activo para cancelar compilaciones previas
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -95,6 +79,7 @@ export function useTypstCompiler(
           setPages(result.pages)
           setTotalPages(result.totalPages)
           useCompilerStore.getState().setError(null)
+          useCompilerStore.getState().setTypstVersion('Typst WASM 0.15')
         } else {
           useCompilerStore.getState().setError(result.error || 'Error desconocido al compilar documento.')
         }
